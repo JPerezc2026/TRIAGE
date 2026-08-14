@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TRIAGE — Acceso</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Institucional */
+  --guinda:#7B1428;--guinda-dk:#5C0E1C;--guinda-lt:#F9EEF1;
+  --verde:#1B4D35;--verde-dk:#113223;--verde-lt:#EAF3EE;
+  --dorado:#C4A96A;--dorado-lt:#FBF6EC;
+  /* Superficies */
+  --bg:#F4F6F9;--panel:#FFFFFF;--panel2:#F0F2F5;--brd:#D1D5DB;--brd2:#E5E7EB;
+  /* Texto */
+  --txt:#111827;--txt2:#374151;--mute:#6B7280;--mute2:#9CA3AF;
+  /* Manchester invariable */
+  --R:#DC2626;--O:#EA580C;--Y:#CA8A04;--G:#16A34A;--T:#0891B2;--B:#1D4ED8;--P:#7C3AED;
+  /* Tipografía */
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans','Outfit',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
+
+/* LOGO */
+.logo-wrap{text-align:center;margin-bottom:32px;}
+.logo-cruz{width:60px;height:60px;background:linear-gradient(135deg,var(--guinda),var(--guinda-dk));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;box-shadow:0 8px 32px rgba(6,148,162,.3);}
+.logo-title{font-size:22px;font-weight:800;letter-spacing:1px;}
+.logo-sub{font-family:var(--mono);font-size:10px;color:var(--mute);letter-spacing:3px;margin-top:3px;}
+
+/* CARD */
+.card{background:var(--panel);border:1px solid var(--brd);border-radius:20px;padding:32px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.4);}
+
+/* VISTAS */
+.vista{display:none;animation:fadeUp .3s ease;}
+.vista.on{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.v-tit{font-size:20px;font-weight:800;margin-bottom:5px;}
+.v-sub{font-size:13px;color:var(--mute);margin-bottom:24px;line-height:1.5;}
+
+/* INPUTS */
+.field{margin-bottom:16px;}
+.field label{display:block;font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--mute);margin-bottom:6px;}
+.inp{width:100%;background:var(--panel2);border:1px solid var(--brd);border-radius:10px;color:var(--txt);font-family:var(--sans);font-size:15px;padding:13px 16px;outline:none;transition:border-color .2s;}
+.inp:focus{border-color:var(--T);}
+.inp::placeholder{color:var(--mute2);}
+.inp-pin{font-size:28px;font-weight:700;letter-spacing:8px;text-align:center;font-family:var(--mono);}
+
+/* PIN TECLADO */
+.teclado{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;}
+.tc-btn{background:var(--panel2);border:1px solid var(--brd);border-radius:10px;color:var(--txt);font-size:20px;font-weight:700;padding:16px;cursor:pointer;transition:all .15s;font-family:var(--mono);}
+.tc-btn:hover{background:#1a2a3d;border-color:var(--T);}
+.tc-btn:active{transform:scale(.95);}
+.tc-btn.del{color:var(--mute);font-size:16px;}
+.tc-btn.ok{background:var(--T);border-color:var(--T);color:#000;}
+.tc-btn.ok:hover{opacity:.85;}
+
+/* DURACIÓN */
+.dur-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;}
+.dur-btn{background:var(--panel2);border:1px solid var(--brd);border-radius:10px;color:var(--mute);font-family:var(--mono);font-size:12px;font-weight:700;padding:12px;cursor:pointer;transition:all .2s;text-align:center;}
+.dur-btn:hover{border-color:var(--T);color:var(--T);}
+.dur-btn.sel{background:rgba(6,148,162,.15);border-color:var(--T);color:var(--T);}
+.dur-custom{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+.dur-lbl{font-family:var(--mono);font-size:10px;color:var(--mute);white-space:nowrap;}
+
+/* BOTONES */
+.btn-ok{width:100%;padding:15px;border-radius:10px;border:none;background:var(--T);color:#000;font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;margin-bottom:10px;}
+.btn-ok:hover{opacity:.85;transform:translateY(-1px);}
+.btn-ok.rojo{background:var(--R);color:#fff;}
+.btn-ok.morado{background:var(--P);color:#fff;}
+.btn-sec{width:100%;padding:12px;border-radius:10px;border:1px solid var(--brd);background:transparent;color:var(--mute);font-family:var(--sans);font-size:13px;cursor:pointer;transition:all .2s;}
+.btn-sec:hover{border-color:var(--txt);color:var(--txt);}
+
+/* ERROR */
+.error-msg{background:rgba(224,36,36,.12);border:1px solid rgba(224,36,36,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--R);margin-bottom:14px;display:none;}
+.error-msg.show{display:block;}
+
+/* SESIÓN ACTIVA */
+.sesion-info{background:rgba(6,148,162,.1);border:1px solid rgba(6,148,162,.2);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.7;}
+.si-nombre{font-size:16px;font-weight:700;color:var(--T);margin-bottom:3px;}
+.si-rol{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--mute);}
+.si-expira{font-family:var(--mono);font-size:10px;color:var(--mute);margin-top:4px;}
+
+/* DOTS PIN */
+.pin-dots{display:flex;justify-content:center;gap:10px;margin:16px 0;}
+.pin-dot{width:14px;height:14px;border-radius:50%;background:var(--brd);transition:all .2s;}
+.pin-dot.lleno{background:var(--T);}
+
+/* LISTA USUARIOS */
+.user-list{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;margin-bottom:14px;}
+.user-item{background:var(--panel2);border:1px solid var(--brd);border-radius:8px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;}
+.ui-info{flex:1;}
+.ui-nombre{font-size:13px;font-weight:600;}
+.ui-pin{font-family:var(--mono);font-size:10px;color:var(--mute);margin-top:2px;}
+.ui-rol{font-family:var(--mono);font-size:8px;letter-spacing:1px;padding:2px 7px;border-radius:4px;background:rgba(6,148,162,.15);color:var(--T);}
+.ui-del{background:transparent;border:none;color:var(--mute2);cursor:pointer;font-size:16px;padding:4px 6px;transition:color .2s;}
+.ui-del:hover{color:var(--R);}
+
+.divider{height:1px;background:var(--brd);margin:18px 0;}
+.link{color:var(--T);font-size:12px;cursor:pointer;text-decoration:underline;text-align:center;display:block;margin-top:10px;}
+
+/* ── HEADER INSTITUCIONAL ── */
+header{background:var(--guinda)!important;border-bottom:3px solid var(--dorado)!important;color:#fff!important;}
+header .lt,.lt{color:#fff!important;}
+header .ls,.ls{color:rgba(255,255,255,.65)!important;}
+header #clk{color:var(--dorado)!important;}
+header .hbtn{border-color:rgba(255,255,255,.35)!important;color:rgba(255,255,255,.8)!important;}
+header .hbtn:hover{border-color:#fff!important;color:#fff!important;background:rgba(255,255,255,.1)!important;}
+/* Logo badge en header */
+header .cruz{background:var(--dorado)!important;color:var(--guinda)!important;}
+/* Badge sesión */
+#sesion-badge{color:rgba(255,255,255,.75)!important;}
+/* ── BODY / FONDO ── */
+body{background:var(--bg)!important;color:var(--txt)!important;}
+/* ── PANELES ── */
+.panel,.card,.calc,.col,.sidebar,.pdet,.content,.ficha,.kpi,.mod-card{background:var(--panel)!important;border-color:var(--brd)!important;color:var(--txt)!important;}
+.panel2,.panel-lista,.tb,.buscador,.toolbar,.filtros,.tabs{background:var(--panel2)!important;}
+/* ── TEXTO GENERAL ── */
+.mute,.mute2,[style*="color:#6B7C93"],[style*="color:#4A5568"]{color:var(--mute)!important;}
+/* ── BOTÓN PRINCIPAL ── */
+.btn-ok,.btn-calc,.buscar-btn,.fbtn,.btn-filtrar,.btn-imp-resumen,.btn-llamar{background:var(--verde)!important;color:#fff!important;}
+.btn-ok:hover,.btn-calc:hover,.buscar-btn:hover,.fbtn:hover,.btn-llamar:hover{background:var(--verde-dk)!important;}
+/* ── INPUTS ── */
+.inp,.fi,.tb-input,.fi-inp,.buscar-input,.buscar-inp{background:var(--panel2)!important;border-color:var(--brd)!important;color:var(--txt)!important;}
+.inp:focus,.fi:focus,.tb-input:focus,.fi-inp:focus,.buscar-input:focus,.buscar-inp:focus{border-color:var(--verde)!important;}
+/* ── SIDEBAR ── */
+.sidebar{background:var(--panel)!important;border-color:var(--brd)!important;}
+.pac-item:hover,.pac-card:hover,.seg-card:hover,.prow:hover{background:var(--verde-lt)!important;}
+.pac-item.activo,.pac-card.sel,.seg-card.sel,.prow.sel{background:var(--verde-lt)!important;border-left-color:var(--verde)!important;}
+/* ── TABS ── */
+.tab{color:var(--mute)!important;}
+.tab.on{color:var(--guinda)!important;border-bottom-color:var(--guinda)!important;}
+.tab:hover{color:var(--guinda-dk)!important;}
+/* ── TABLA ── */
+.tabla th,thead th{color:var(--mute)!important;border-color:var(--brd)!important;background:var(--panel2)!important;}
+tbody tr:hover td{background:var(--verde-lt)!important;}
+/* ── TICKER (display) ── */
+.ticker{background:var(--guinda-dk)!important;border-color:var(--guinda)!important;}
+.ticker-inner{color:rgba(255,255,255,.6)!important;}
+/* ── TOPBAR (index) ── */
+.topbar{background:var(--guinda)!important;border-color:var(--guinda-dk)!important;}
+.tb-title,.tb-sub{color:#fff!important;}
+#clk{color:var(--dorado)!important;}
+/* ── KPI STRIP ── */
+.kpi-strip{background:var(--panel)!important;border-color:var(--brd)!important;}
+/* ── MODULO CARD ── */
+.mod-card{border-color:var(--brd)!important;color:var(--txt)!important;}
+.mod-card:hover{box-shadow:0 8px 32px rgba(123,20,40,.12)!important;}
+/* ── FOOTER DISPLAY ── */
+footer{background:var(--guinda)!important;border-color:var(--guinda-dk)!important;color:#fff!important;}
+footer .fi{color:rgba(255,255,255,.8)!important;}
+/* ── HEADER DISPLAY ── */
+.hdr{background:var(--guinda)!important;border-color:var(--guinda-dk)!important;}
+.htit,.hsub,.hlogo{color:#fff!important;}
+
+
+  * { -webkit-tap-highlight-color: transparent; }
+
+  
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  
+  .card {
+    max-width: 480px;
+    padding: 28px 32px;
+    border-radius: 18px;
+    margin: 16px auto;
+  }
+
+  
+  .logo-wrap { margin-bottom: 20px; }
+  .logo-cruz { width: 52px; height: 52px; font-size: 24px; margin-bottom: 10px; }
+  .logo-title { font-size: 20px; }
+
+  /* Teclado numérico PIN — botones grandes táctiles */
+  .teclado {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 14px 0;
+  }
+  .tecla {
+    min-height: 64px;
+    font-size: 22px;
+    border-radius: 12px;
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+
+  /* Display del PIN */
+  .pin-display {
+    min-height: 56px;
+    font-size: 28px;
+    letter-spacing: 8px;
+    border-radius: 10px;
+  }
+
+  /* Grid de duración */
+  .dur-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .dur-btn {
+    min-height: 48px;
+    font-size: 12px;
+    border-radius: 9px;
+    touch-action: manipulation;
+  }
+
+  /* Lista de usuarios */
+  .user-list {
+    max-height: 220px;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+  }
+  .user-item {
+    min-height: 56px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    touch-action: manipulation;
+  }
+  .ui-nombre { font-size: 14px; }
+  .ui-rol { font-size: 11px; }
+
+  /* Botón ingresar */
+  .btn-login, .btn-ingresar {
+    min-height: 54px;
+    font-size: 14px;
+    border-radius: 10px;
+    letter-spacing: 2px;
+    touch-action: manipulation;
+  }
+
+  /* Botón borrar PIN */
+  .btn-borrar {
+    min-height: 48px;
+    font-size: 13px;
+    touch-action: manipulation;
+  }
+}
+
+/* iPad Pro 12.9" — card más grande */
+
+  .tecla { min-height: 72px; font-size: 24px; }
+  .pin-display { min-height: 64px; font-size: 32px; }
+  .btn-login, .btn-ingresar { min-height: 60px; font-size: 15px; }
+}
+
+</style>
+<link rel="stylesheet" href="triage-ssa.css">
+</head>
+<body>
+
+<div class="logo-ssa" style="display:flex;align-items:center;gap:10px;flex-shrink:0;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 48" height="36" style="display:block">
+  <circle cx="20" cy="24" r="17" fill="#C4A96A" opacity=".9"/>
+  <circle cx="20" cy="24" r="13" fill="#7B1428"/>
+  <text x="20" y="29" text-anchor="middle" font-size="14" fill="#C4A96A" font-family="serif">🦅</text>
+  <text x="44" y="18" font-size="11" fill="#ffffff" font-family="IBM Plex Sans,sans-serif" font-weight="700" letter-spacing=".3">Secretaría de Salud</text>
+  <line x1="44" y1="22" x2="172" y2="22" stroke="#C4A96A" stroke-width="1" opacity=".6"/>
+  <text x="44" y="34" font-size="9" fill="rgba(255,255,255,.7)" font-family="IBM Plex Sans,sans-serif" letter-spacing=".5">GOBIERNO DE MÉXICO</text>
+</svg></div>
+<div class="logo-wrap">
+  <div class="logo-cruz">✚</div>
+  <div class="logo-title">SISTEMA DE TRIAGE</div>
+  <div class="logo-sub">CENTRO DE SALUD</div>
+</div>
+
+<div class="card">
+
+  <!-- ── VISTA: LOGIN ── -->
+  <div class="vista on" id="v-login">
+    <div class="v-tit">Iniciar sesión</div>
+    <div class="v-sub">Ingresa tu PIN o contraseña para acceder al sistema.</div>
+
+    <div class="error-msg" id="login-error">PIN o contraseña incorrectos. Intenta de nuevo.</div>
+
+    <div class="field">
+      <label>NOMBRE DE USUARIO</label>
+      <input class="inp" id="login-user" placeholder="Tu nombre o usuario" autocomplete="username">
+    </div>
+
+    <div class="field">
+      <label>PIN (6 dígitos) O CONTRASEÑA</label>
+      <div class="pin-dots" id="pin-dots-login">
+        <div class="pin-dot" id="pd0"></div>
+        <div class="pin-dot" id="pd1"></div>
+        <div class="pin-dot" id="pd2"></div>
+        <div class="pin-dot" id="pd3"></div>
+        <div class="pin-dot" id="pd4"></div>
+        <div class="pin-dot" id="pd5"></div>
+      </div>
+      <div class="teclado" id="teclado-login">
+        <button class="tc-btn" onclick="tecla('1')">1</button>
+        <button class="tc-btn" onclick="tecla('2')">2</button>
+        <button class="tc-btn" onclick="tecla('3')">3</button>
+        <button class="tc-btn" onclick="tecla('4')">4</button>
+        <button class="tc-btn" onclick="tecla('5')">5</button>
+        <button class="tc-btn" onclick="tecla('6')">6</button>
+        <button class="tc-btn" onclick="tecla('7')">7</button>
+        <button class="tc-btn" onclick="tecla('8')">8</button>
+        <button class="tc-btn" onclick="tecla('9')">9</button>
+        <button class="tc-btn del" onclick="borrar()">⌫</button>
+        <button class="tc-btn" onclick="tecla('0')">0</button>
+        <button class="tc-btn ok" onclick="loginConPin()">→</button>
+      </div>
+      <div style="text-align:center;font-family:var(--mono);font-size:10px;color:var(--mute);margin:8px 0">— O —</div>
+      <input class="inp" id="login-pass" type="password" placeholder="Contraseña personalizada" autocomplete="current-password" onkeydown="if(event.key==='Enter')loginConPass()">
+      <button class="btn-ok" style="margin-top:10px" onclick="loginConPass()">Ingresar con contraseña</button>
+    </div>
+
+    <a class="link" onclick="showVista('v-master')">Acceso maestro →</a>
+  </div>
+
+  <!-- ── VISTA: DURACIÓN SESIÓN ── -->
+  <div class="vista" id="v-duracion">
+    <div class="v-tit">¿Cuánto tiempo? ⏱</div>
+    <div class="v-sub">Selecciona cuánto tiempo quieres mantener la sesión abierta.</div>
+
+    <div class="sesion-info">
+      <div class="si-nombre" id="dur-nombre">—</div>
+      <div class="si-rol">PERSONAL MÉDICO</div>
+    </div>
+
+    <div class="dur-grid">
+      <button class="dur-btn" onclick="selDur(4)">4 horas</button>
+      <button class="dur-btn" onclick="selDur(8)">8 horas</button>
+      <button class="dur-btn" onclick="selDur(12)">12 horas</button>
+      <button class="dur-btn" onclick="selDur(24)">24 horas</button>
+    </div>
+
+    <div class="dur-custom">
+      <div class="dur-lbl">PERSONALIZADO:</div>
+      <input class="inp" id="dur-custom" type="number" placeholder="Horas" min="1" max="72" style="flex:1">
+      <button class="btn-ok" style="width:auto;padding:13px 18px;margin:0" onclick="selDurCustom()">OK</button>
+    </div>
+
+    <div class="error-msg" id="dur-error">Ingresa un número de horas válido (1-72).</div>
+  </div>
+
+  <!-- ── VISTA: MAESTRO LOGIN ── -->
+  <div class="vista" id="v-master">
+    <div class="v-tit">🔑 Acceso Maestro</div>
+    <div class="v-sub">Ingresa la contraseña maestra para gestionar usuarios y PINes.</div>
+
+    <div class="error-msg" id="master-error">Contraseña maestra incorrecta.</div>
+
+    <div class="field">
+      <label>CONTRASEÑA MAESTRA</label>
+      <input class="inp" id="master-pass" type="password" placeholder="Contraseña maestra" onkeydown="if(event.key==='Enter')loginMaestro()">
+    </div>
+    <button class="btn-ok morado" onclick="loginMaestro()">Acceder como Administrador</button>
+    <button class="btn-sec" onclick="showVista('v-login')">← Volver</button>
+  </div>
+
+  <!-- ── VISTA: PANEL MAESTRO ── -->
+  <div class="vista" id="v-panel-maestro">
+    <div class="v-tit">⚙️ Gestión de Usuarios</div>
+    <div class="v-sub">Crea, edita y elimina PINes de acceso.</div>
+
+    <div class="user-list" id="user-list"></div>
+
+    <button class="btn-ok morado" onclick="showVista('v-crear-usuario')">+ Crear nuevo usuario</button>
+    <div class="divider"></div>
+    <button class="btn-ok rojo" onclick="cambiarMaster()">🔑 Cambiar contraseña maestra</button>
+    <button class="btn-sec" onclick="cerrarMaestro()">← Salir del panel maestro</button>
+  </div>
+
+  <!-- ── VISTA: CREAR USUARIO ── -->
+  <div class="vista" id="v-crear-usuario">
+    <div class="v-tit">Nuevo usuario</div>
+    <div class="v-sub">Completa los datos. El PIN se genera automáticamente o puedes asignar una contraseña personalizada.</div>
+
+    <div class="field">
+      <label>NOMBRE COMPLETO</label>
+      <input class="inp" id="nu-nombre" placeholder="Ej: Dr. Juan García" oninput="generarPinAuto()">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field">
+        <label>FECHA DE NACIMIENTO</label>
+        <input class="inp" id="nu-fechanac" type="date" oninput="generarPinAuto()">
+      </div>
+      <div class="field">
+        <label>PIN GENERADO</label>
+        <input class="inp inp-pin" id="nu-pin" placeholder="——" maxlength="8" style="font-size:18px;letter-spacing:4px">
+      </div>
+    </div>
+    <div class="field">
+      <label>CONTRASEÑA PERSONALIZADA (OPCIONAL)</label>
+      <input class="inp" id="nu-pass" type="password" placeholder="Dejar vacío para usar solo PIN">
+    </div>
+
+    <div class="error-msg" id="nu-error">Por favor completa nombre y fecha de nacimiento.</div>
+
+    <button class="btn-ok" onclick="crearUsuario()">✓ Crear usuario</button>
+    <button class="btn-sec" onclick="showVista('v-panel-maestro')">← Volver</button>
+  </div>
+
+</div><!-- /card -->
+
+<script>
+/* ══════════════════════════════════════
+   ALMACENAMIENTO — localStorage
+   ══════════════════════════════════════ */
+const STORAGE_USERS  = 'triage_usuarios';
+const STORAGE_SESION = 'triage_sesion';
+const MASTER_KEY     = 'triage_master_pass';
+
+// Contraseña maestra por defecto (se puede cambiar)
+const DEFAULT_MASTER = 'MASTER2024';
+
+function getUsuarios(){ return JSON.parse(localStorage.getItem(STORAGE_USERS)||'[]'); }
+function setUsuarios(u){ localStorage.setItem(STORAGE_USERS,JSON.stringify(u)); }
+function getMaster(){ return localStorage.getItem(MASTER_KEY)||DEFAULT_MASTER; }
+function setMaster(p){ localStorage.setItem(MASTER_KEY,p); }
+
+/* ══════════════════════════════════════
+   SESIÓN
+   ══════════════════════════════════════ */
+function getSesion(){ return JSON.parse(localStorage.getItem(STORAGE_SESION)||'null'); }
+function setSesion(datos){ localStorage.setItem(STORAGE_SESION,JSON.stringify(datos)); }
+function borrarSesion(){ localStorage.removeItem(STORAGE_SESION); }
+
+function sesionValida(){
+  const s=getSesion();
+  if(!s||!s.expira) return false;
+  return Date.now()<s.expira;
+}
+
+// Si ya hay sesión válida, redirigir al destino
+(function(){
+  if(sesionValida()){
+    const dest=getParam('dest')||'index.html';
+    window.location.href=dest;
+  }
+})();
+
+function getParam(name){
+  return new URLSearchParams(window.location.search).get(name);
+}
+
+/* ══════════════════════════════════════
+   TECLADO PIN
+   ══════════════════════════════════════ */
+let pinActual='';
+
+function tecla(n){
+  if(pinActual.length>=6) return;
+  pinActual+=n;
+  actualizarDots();
+  if(pinActual.length===6) setTimeout(loginConPin,200);
+}
+
+function borrar(){
+  pinActual=pinActual.slice(0,-1);
+  actualizarDots();
+}
+
+function actualizarDots(){
+  for(let i=0;i<6;i++){
+    const d=document.getElementById('pd'+i);
+    if(d) d.className='pin-dot'+(i<pinActual.length?' lleno':'');
+  }
+}
+
+/* ══════════════════════════════════════
+   LOGIN
+   ══════════════════════════════════════ */
+let usuarioPendiente=null;
+
+function loginConPin(){
+  const user=document.getElementById('login-user').value.trim();
+  if(!user){mostrarError('login-error','Ingresa tu nombre de usuario.');return;}
+  if(pinActual.length<4){mostrarError('login-error','El PIN debe tener al menos 4 dígitos.');return;}
+  const usuarios=getUsuarios();
+  const match=usuarios.find(u=>
+    u.nombre.toLowerCase()===user.toLowerCase()&&u.pin===pinActual
+  );
+  if(!match){mostrarError('login-error','PIN o usuario incorrecto.');pinActual='';actualizarDots();return;}
+  document.getElementById('login-error').classList.remove('show');
+  usuarioPendiente=match;
+  document.getElementById('dur-nombre').textContent=match.nombre;
+  showVista('v-duracion');
+}
+
+function loginConPass(){
+  const user=document.getElementById('login-user').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  if(!user||!pass){mostrarError('login-error','Ingresa usuario y contraseña.');return;}
+  const usuarios=getUsuarios();
+  const match=usuarios.find(u=>
+    u.nombre.toLowerCase()===user.toLowerCase()&&u.pass&&u.pass===pass
+  );
+  if(!match){mostrarError('login-error','Usuario o contraseña incorrectos.');return;}
+  document.getElementById('login-error').classList.remove('show');
+  usuarioPendiente=match;
+  document.getElementById('dur-nombre').textContent=match.nombre;
+  showVista('v-duracion');
+}
+
+/* ══════════════════════════════════════
+   DURACIÓN SESIÓN
+   ══════════════════════════════════════ */
+function selDur(horas){
+  document.querySelectorAll('.dur-btn').forEach(b=>b.classList.remove('sel'));
+  event.target.classList.add('sel');
+  abrirSesion(horas);
+}
+
+function selDurCustom(){
+  const h=parseInt(document.getElementById('dur-custom').value);
+  if(isNaN(h)||h<1||h>72){mostrarError('dur-error','Ingresa un número entre 1 y 72 horas.');return;}
+  abrirSesion(h);
+}
+
+function abrirSesion(horas){
+  if(!usuarioPendiente) return;
+  const expira=Date.now()+horas*3600*1000;
+  setSesion({
+    nombre: usuarioPendiente.nombre,
+    horas,
+    inicio: Date.now(),
+    expira
+  });
+  // Redirigir al destino
+  const dest=getParam('dest')||'index.html';
+  window.location.href=dest;
+}
+
+/* ══════════════════════════════════════
+   ACCESO MAESTRO
+   ══════════════════════════════════════ */
+function loginMaestro(){
+  const pass=document.getElementById('master-pass').value;
+  if(pass!==getMaster()){mostrarError('master-error','Contraseña maestra incorrecta.');return;}
+  document.getElementById('master-error').classList.remove('show');
+  showVista('v-panel-maestro');
+  renderUsuarios();
+}
+
+function cerrarMaestro(){ showVista('v-login'); }
+
+function cambiarMaster(){
+  const nueva=prompt('Nueva contraseña maestra (mínimo 6 caracteres):');
+  if(!nueva||nueva.length<6){alert('Contraseña demasiado corta.');return;}
+  const confirma=prompt('Confirma la nueva contraseña:');
+  if(nueva!==confirma){alert('Las contraseñas no coinciden.');return;}
+  setMaster(nueva);
+  alert('✓ Contraseña maestra actualizada.');
+}
+
+/* ══════════════════════════════════════
+   GESTIÓN DE USUARIOS
+   ══════════════════════════════════════ */
+function renderUsuarios(){
+  const usuarios=getUsuarios();
+  const lista=document.getElementById('user-list');
+  if(usuarios.length===0){
+    lista.innerHTML='<div style="text-align:center;color:var(--mute);font-family:var(--mono);font-size:11px;padding:20px;opacity:.5">Sin usuarios creados</div>';
+    return;
+  }
+  lista.innerHTML=usuarios.map((u,i)=>`
+    <div class="user-item">
+      <div class="ui-info">
+        <div class="ui-nombre">${u.nombre}</div>
+        <div class="ui-pin">PIN: ${u.pin}${u.pass?' · Tiene contraseña personalizada':''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="ui-rol">PERSONAL</div>
+        <button class="ui-del" onclick="eliminarUsuario(${i})" title="Eliminar">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function eliminarUsuario(idx){
+  if(!confirm('¿Eliminar este usuario?')) return;
+  const u=getUsuarios();
+  u.splice(idx,1);
+  setUsuarios(u);
+  renderUsuarios();
+}
+
+/* ══════════════════════════════════════
+   CREAR USUARIO
+   ══════════════════════════════════════ */
+function generarPinAuto(){
+  const nombre=document.getElementById('nu-nombre').value.trim();
+  const fecha=document.getElementById('nu-fechanac').value;
+  if(!nombre||!fecha){ document.getElementById('nu-pin').value=''; return; }
+
+  // Obtener iniciales: primera letra del primer nombre + primera letra del primer apellido
+  const partes=nombre.replace(/^Dr\.?\s*|^Dra\.?\s*|^Lic\.?\s*/i,'').trim().split(/\s+/);
+  const inicial1=(partes[0]||'')[0]?.toUpperCase()||'';
+  const inicial2=(partes[1]||'')[0]?.toUpperCase()||'';
+
+  // Fecha: ddmmyy
+  const [yyyy,mm,dd]=fecha.split('-');
+  const fechaStr=(dd||'')+(mm||'')+(yyyy||'').slice(-2);
+
+  const pin=(inicial1+inicial2+fechaStr).toUpperCase();
+  document.getElementById('nu-pin').value=pin;
+}
+
+function crearUsuario(){
+  const nombre=document.getElementById('nu-nombre').value.trim();
+  const fechanac=document.getElementById('nu-fechanac').value;
+  const pin=document.getElementById('nu-pin').value.trim().toUpperCase();
+  const pass=document.getElementById('nu-pass').value.trim();
+
+  if(!nombre||!pin){mostrarError('nu-error','Por favor completa nombre y PIN.');return;}
+  if(pin.length<4){mostrarError('nu-error','El PIN debe tener al menos 4 caracteres.');return;}
+
+  const usuarios=getUsuarios();
+  // Verificar duplicados
+  if(usuarios.find(u=>u.pin===pin)){
+    mostrarError('nu-error','Ese PIN ya está en uso. Elige otro.');return;
+  }
+
+  usuarios.push({nombre,fechanac,pin,pass:pass||null});
+  setUsuarios(usuarios);
+  document.getElementById('nu-error').classList.remove('show');
+  // Limpiar form
+  ['nu-nombre','nu-fechanac','nu-pin','nu-pass'].forEach(id=>document.getElementById(id).value='');
+  showVista('v-panel-maestro');
+  renderUsuarios();
+}
+
+/* ══════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════ */
+function showVista(id){
+  document.querySelectorAll('.vista').forEach(v=>v.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+
+function mostrarError(id,msg){
+  const el=document.getElementById(id);
+  if(msg) el.textContent=msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+// Crear usuario maestro por defecto si no hay ninguno
+if(getUsuarios().length===0){
+  setUsuarios([{
+    nombre:'Administrador',
+    fechanac:'',
+    pin:'ADMIN1',
+    pass:'admin123'
+  }]);
+}
+</script>
+</body>
+</html>

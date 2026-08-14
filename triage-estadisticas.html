@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRIAGE — Estadísticas</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --R:#E63946;--O:#F4A261;--Y:#E9C46A;--G:#2A9D8F;--B:#457B9D;--T:#0694A2;--P:#6B46C1;
+  --bg:#0A0E1A;--panel:#111827;--panel2:#0D1520;--brd:#1E2D3D;
+  --txt:#E8F4FD;--mute:#6B7C93;--mute2:#4A5568;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column;}
+
+header{background:var(--panel);border-bottom:1px solid var(--brd);padding:11px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.logo{display:flex;align-items:center;gap:10px;}
+.cruz{width:32px;height:32px;background:var(--P);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.lt{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:3px;}
+.ls{font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:2px;}
+#clk{font-family:var(--mono);font-size:16px;color:var(--P);letter-spacing:2px;}
+.hbtn{background:transparent;border:1px solid var(--mute);color:var(--mute);font-family:var(--mono);font-size:10px;padding:6px 12px;border-radius:4px;cursor:pointer;transition:all .2s;}
+.hbtn:hover{border-color:var(--txt);color:var(--txt);}
+.hbtn.export{border-color:var(--G);color:var(--G);}
+.hbtn.export:hover{background:var(--G);color:#000;}
+
+/* TABS */
+.tabs{background:var(--panel);border-bottom:1px solid var(--brd);padding:0 24px;display:flex;gap:0;flex-shrink:0;}
+.tab{font-family:var(--mono);font-size:11px;letter-spacing:1px;padding:13px 18px;cursor:pointer;color:var(--mute);border-bottom:2px solid transparent;transition:all .2s;}
+.tab:hover{color:var(--txt);}
+.tab.on{color:var(--P);border-bottom-color:var(--P);font-weight:700;}
+
+/* FILTROS */
+.filtros{background:var(--panel2);border-bottom:1px solid var(--brd);padding:10px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex-shrink:0;}
+.fi-label{font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:2px;}
+.fi-inp{background:var(--panel);border:1px solid var(--brd);border-radius:6px;color:var(--txt);font-family:var(--sans);font-size:12px;padding:7px 11px;outline:none;transition:border-color .2s;}
+.fi-inp:focus{border-color:var(--P);}
+.fi-inp[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.4;}
+.btn-filtrar{background:var(--P);border:none;color:#fff;font-family:var(--mono);font-size:10px;font-weight:700;padding:8px 16px;border-radius:6px;cursor:pointer;transition:opacity .2s;}
+.btn-filtrar:hover{opacity:.8;}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:16px;}
+
+/* SECCIÓN */
+.tab-panel{display:none;}
+.tab-panel.on{display:flex;flex-direction:column;gap:16px;}
+
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.kpi{background:var(--panel);border:1px solid var(--brd);border-radius:10px;padding:16px 18px;}
+.kpi-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--mute);margin-bottom:8px;text-transform:uppercase;}
+.kpi-val{font-size:28px;font-weight:900;font-family:var(--mono);}
+.kpi-sub{font-family:var(--mono);font-size:10px;color:var(--mute);margin-top:4px;}
+.kpi-bar{height:3px;border-radius:2px;margin-top:8px;background:var(--brd);}
+.kpi-bar-fill{height:100%;border-radius:2px;transition:width .5s;}
+
+/* GRID 2 COLUMNAS */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+/* PANEL */
+.card{background:var(--panel);border:1px solid var(--brd);border-radius:10px;overflow:hidden;}
+.card-hdr{padding:12px 16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;}
+.card-tit{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--mute);font-weight:700;}
+.card-body{padding:16px;}
+
+/* TABLA */
+.tabla{width:100%;border-collapse:collapse;font-size:12px;}
+.tabla th{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--mute);padding:7px 10px;border-bottom:1px solid var(--brd);text-align:left;}
+.tabla td{padding:8px 10px;border-bottom:1px solid var(--brd);}
+.tabla tr:last-child td{border-bottom:none;}
+.tabla tr:hover td{background:#151f30;}
+
+/* BARRA DIAGNÓSTICO */
+.dx-bar{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--brd);}
+.dx-bar:last-child{border-bottom:none;}
+.dx-nombre{flex:1;font-size:12px;}
+.dx-cie{font-family:var(--mono);font-size:9px;color:var(--mute);min-width:40px;}
+.dx-barra{flex:2;background:var(--brd);border-radius:3px;height:6px;overflow:hidden;}
+.dx-fill{height:100%;border-radius:3px;background:var(--P);transition:width .5s;}
+.dx-cnt{font-family:var(--mono);font-size:10px;font-weight:700;min-width:24px;text-align:right;}
+
+/* CHART CONTAINER */
+.chart-wrap{position:relative;height:200px;}
+.chart-wrap-tall{position:relative;height:260px;}
+
+/* BADGE */
+.badge{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;}
+.b-p1{background:rgba(230,57,70,.15);color:var(--R);}
+.b-p2{background:rgba(244,162,97,.15);color:var(--O);}
+.b-p3{background:rgba(233,196,106,.15);color:var(--Y);}
+.b-p4{background:rgba(42,157,143,.15);color:var(--G);}
+.b-p5{background:rgba(6,148,162,.15);color:var(--T);}
+.b-pv{background:rgba(42,157,143,.15);color:var(--G);}
+.b-pf{background:rgba(107,70,193,.15);color:var(--P);}
+
+/* EXPORT BUTTONS */
+.export-grid{display:flex;gap:10px;flex-wrap:wrap;}
+.btn-exp{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--brd);color:var(--txt);font-family:var(--sans);font-size:13px;font-weight:600;padding:12px 18px;border-radius:8px;cursor:pointer;transition:all .2s;}
+.btn-exp:hover{border-color:var(--G);color:var(--G);}
+.btn-exp .exp-ico{font-size:20px;}
+.btn-exp-desc{font-size:11px;color:var(--mute);font-weight:400;display:block;margin-top:1px;}
+
+/* EMPTY */
+.empty{padding:40px;text-align:center;color:var(--mute);font-family:var(--mono);font-size:11px;opacity:.5;}
+
+/* SEMAFORO */
+.semaforo{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;}
+.sem-dot{width:8px;height:8px;border-radius:50%;}
+
+footer{background:var(--panel);border-top:1px solid var(--brd);padding:9px 24px;display:flex;gap:16px;align-items:center;flex-shrink:0;}
+.fi{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;}
+.fdot{width:7px;height:7px;border-radius:50%;}
+.live{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--P);display:flex;align-items:center;gap:6px;}
+.ldot{width:5px;height:5px;border-radius:50%;background:var(--P);animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+<script src="triage-auth.js"></script>
+<link rel="stylesheet" href="triage-ssa.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="cruz" style="background:var(--ssa-vino)!important;font-size:16px">📊</div>
+    <div><div class="lt">ESTADÍSTICAS</div><div class="ls">PANEL ADMINISTRATIVO Y EPIDEMIOLÓGICO</div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div id="clk">--:--:--</div>
+    <button class="hbtn" onclick="window.open('triage-medico.html')">← MÉDICO</button>
+    <button class="hbtn export" onclick="exportarExcel()">⬇ EXPORTAR EXCEL</button>
+    <button class="hbtn export" onclick="exportarCSV()">⬇ EXPORTAR CSV</button>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab on" id="tab-dia" onclick="showTab('dia')">📅 HOY</div>
+  <div class="tab" id="tab-periodo" onclick="showTab('periodo')">📆 PERÍODO</div>
+  <div class="tab" id="tab-epi" onclick="showTab('epi')">🦠 EPIDEMIOLOGÍA</div>
+  <div class="tab" id="tab-admin" onclick="showTab('admin')">🏥 ADMINISTRACIÓN</div>
+  <div class="tab" id="tab-inv" onclick="showTab('inv')">🔬 INVESTIGACIÓN</div>
+</div>
+
+<!-- FILTROS -->
+<div class="filtros">
+  <div class="fi-label">PERÍODO</div>
+  <input class="fi-inp" type="date" id="f-desde">
+  <span style="color:var(--mute);font-size:12px">→</span>
+  <input class="fi-inp" type="date" id="f-hasta">
+  <button class="btn-filtrar" onclick="aplicarFiltros()">Actualizar</button>
+  <button class="hbtn" onclick="setHoy()">Hoy</button>
+  <button class="hbtn" onclick="setSemana()">Esta semana</button>
+  <button class="hbtn" onclick="setMes()">Este mes</button>
+  <div style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--mute)" id="filtro-label">Cargando...</div>
+</div>
+
+<div class="main">
+
+  <!-- ══════ TAB HOY ══════ -->
+  <div class="tab-panel on" id="panel-dia">
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Total atendidos</div>
+        <div class="kpi-val" id="k-total" style="color:var(--P)">0</div>
+        <div class="kpi-sub" id="k-total-sub">en el período</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Tiempo prom. espera</div>
+        <div class="kpi-val" id="k-espera" style="color:var(--G)">—</div>
+        <div class="kpi-sub">minutos</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Primera vez</div>
+        <div class="kpi-val" id="k-primera" style="color:var(--B)">0</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" id="kb-primera" style="background:var(--B);width:0%"></div></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Subsecuentes</div>
+        <div class="kpi-val" id="k-subsec" style="color:var(--T)">0</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" id="kb-subsec" style="background:var(--T);width:0%"></div></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Urgencias P1+P2</div>
+        <div class="kpi-val" id="k-urgentes" style="color:var(--R)">0</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" id="kb-urgentes" style="background:var(--R);width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+
+      <!-- PRIORIDADES -->
+      <div class="card">
+        <div class="card-hdr"><div class="card-tit">DISTRIBUCIÓN POR PRIORIDAD</div></div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="chart-prio"></canvas></div>
+        </div>
+      </div>
+
+      <!-- HORA DEL DÍA -->
+      <div class="card">
+        <div class="card-hdr"><div class="card-tit">AFLUENCIA POR HORA</div></div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="chart-hora"></canvas></div>
+        </div>
+      </div>
+
+      <!-- TIPO DE CONSULTA -->
+      <div class="card">
+        <div class="card-hdr"><div class="card-tit">TIPO DE CONSULTA</div></div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="chart-tipo"></canvas></div>
+        </div>
+      </div>
+
+      <!-- DEMOGRAFÍA -->
+      <div class="card">
+        <div class="card-hdr"><div class="card-tit">DEMOGRAFÍA</div></div>
+        <div class="card-body" id="demografia-body">
+          <div class="empty">Sin datos</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════ TAB PERÍODO ══════ -->
+  <div class="tab-panel" id="panel-periodo">
+    <div class="grid2">
+      <div class="card">
+        <div class="card-hdr"><div class="card-tit">CONSULTAS POR DÍA</div></div>
+        <div class="card-body">
+          <div class="chart-wrap-tall"><canvas id="chart-dias"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="card-tit">TENDENCIA DE URGENCIAS</div></div>
+        <div class="card-body">
+          <div class="chart-wrap-tall"><canvas id="chart-urgencias-dias"></canvas></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-tit">TABLA DE CONSULTAS POR DÍA</div>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="tabla">
+          <thead><tr><th>Fecha</th><th>Total</th><th>P1</th><th>P2</th><th>P3</th><th>P4</th><th>P5</th><th>Primera vez</th><th>Subsecuente</th></tr></thead>
+          <tbody id="tabla-dias"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ TAB EPIDEMIOLOGÍA ══════ -->
+  <div class="tab-panel" id="panel-epi">
+    <div class="grid2">
+      <div class="card">
+        <div class="card-hdr"><div class="card-tit">TOP 10 DIAGNÓSTICOS</div></div>
+        <div class="card-body" id="top-dx">
+          <div class="empty">Sin diagnósticos registrados</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="card-tit">DIAGNÓSTICOS POR SEMANA</div></div>
+        <div class="card-body">
+          <div class="chart-wrap-tall"><canvas id="chart-dx-semana"></canvas></div>
+        </div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-hdr"><div class="card-tit">TOP CIE-10</div></div>
+        <div class="card-body" style="padding:0">
+          <table class="tabla">
+            <thead><tr><th>CIE-10</th><th>Diagnóstico</th><th>Casos</th><th>%</th></tr></thead>
+            <tbody id="tabla-cie"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="card-tit">DISTRIBUCIÓN POR GRUPOS DE EDAD</div></div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="chart-edad"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ TAB ADMINISTRACIÓN ══════ -->
+  <div class="tab-panel" id="panel-admin">
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">En observación</div>
+        <div class="kpi-val" id="ka-obs" style="color:var(--T)">0</div>
+        <div class="kpi-sub">actualmente</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Seguimientos activos</div>
+        <div class="kpi-val" id="ka-seg" style="color:var(--G)">0</div>
+        <div class="kpi-sub">programados</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Seguimientos vencidos</div>
+        <div class="kpi-val" id="ka-seg-venc" style="color:var(--R)">0</div>
+        <div class="kpi-sub">sin asistir</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Pacientes frecuentes</div>
+        <div class="kpi-val" id="ka-frec" style="color:var(--Y)">0</div>
+        <div class="kpi-sub">≥3 visitas/30 días</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Con banderas alarma</div>
+        <div class="kpi-val" id="ka-banderas" style="color:var(--O)">0</div>
+        <div class="kpi-sub">en el período</div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-hdr"><div class="card-tit">TOP MEDICAMENTOS EN OBSERVACIÓN</div></div>
+        <div class="card-body" id="top-meds">
+          <div class="empty">Sin datos</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="card-tit">TOP ESTUDIOS SOLICITADOS</div></div>
+        <div class="card-body" id="top-estudios">
+          <div class="empty">Sin datos</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-tit">PACIENTES FRECUENTES (≥3 VISITAS EN 30 DÍAS)</div></div>
+      <div class="card-body" style="padding:0">
+        <table class="tabla">
+          <thead><tr><th>Paciente</th><th>Visitas (30d)</th><th>Último diagnóstico</th><th>Última visita</th></tr></thead>
+          <tbody id="tabla-frecuentes"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ TAB INVESTIGACIÓN ══════ -->
+  <div class="tab-panel" id="panel-inv">
+    <div class="card">
+      <div class="card-hdr"><div class="card-tit">EXPORTACIÓN PARA INVESTIGACIÓN</div></div>
+      <div class="card-body">
+        <div style="font-size:13px;color:var(--mute);margin-bottom:20px;line-height:1.7">
+          Los datos se exportan <strong>completamente anonimizados</strong> — sin nombre, sin fecha de nacimiento exacta, solo variables clínicas agregadas. Útil para informes, proyectos de intervención, carteles y publicaciones.
+        </div>
+        <div class="export-grid">
+          <button class="btn-exp" onclick="exportarExcel()">
+            <span class="exp-ico">📊</span>
+            <div>
+              <div>Exportar a Excel (.xlsx)</div>
+              <span class="btn-exp-desc">Hoja de datos clínicos anonimizados · Hoja de diagnósticos · Hoja de epidemiología</span>
+            </div>
+          </button>
+          <button class="btn-exp" onclick="exportarCSV()">
+            <span class="exp-ico">📄</span>
+            <div>
+              <div>Exportar a CSV</div>
+              <span class="btn-exp-desc">Compatible con SPSS, Stata, R y Python</span>
+            </div>
+          </button>
+          <button class="btn-exp" onclick="exportarResumenMensual()">
+            <span class="exp-ico">📋</span>
+            <div>
+              <div>Resumen mensual imprimible</div>
+              <span class="btn-exp-desc">Formato de reporte para SINAIS / DGIS</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-tit">VISTA PREVIA — DATOS ANONIMIZADOS</div>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--mute)" id="inv-total">0 registros</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div style="overflow-x:auto">
+          <table class="tabla" id="tabla-inv">
+            <thead><tr>
+              <th>ID</th><th>Edad</th><th>Sexo</th><th>Grupo edad</th>
+              <th>Prioridad</th><th>Motivo</th><th>Diagnóstico</th><th>CIE-10</th>
+              <th>Tipo consulta</th><th>Dolor</th><th>En obs.</th><th>Fecha</th>
+            </tr></thead>
+            <tbody id="tbody-inv"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<footer>
+  <div class="fi"><div class="fdot" style="background:var(--P)"></div><span id="f-total-pac">0</span> registros totales</div>
+  <div class="fi"><div class="fdot" style="background:var(--R)"></div><span id="f-p1">0</span> críticos</div>
+  <div class="fi"><div class="fdot" style="background:var(--G)"></div><span id="f-dx">0</span> diagnósticos únicos</div>
+  <div class="live"><div class="ldot"></div>FIREBASE EN VIVO</div>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCDTgiL6OvNFYh-PC4g57GTw04pclU-nfs",
+  authDomain: "triage-centro-de-salud.firebaseapp.com",
+  databaseURL: "https://triage-centro-de-salud-default-rtdb.firebaseio.com",
+  projectId: "triage-centro-de-salud",
+  storageBucket: "triage-centro-de-salud.firebasestorage.app",
+  messagingSenderId: "66063012451",
+  appId: "1:66063012451:web:8be493b361302fbd185e56"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+let historial=[], observacion={}, seguimientos={}, pacientesActivos=[];
+let desde='', hasta='', datosFiltrados=[];
+let charts={};
+
+setInterval(()=>document.getElementById('clk').textContent=
+  new Date().toLocaleTimeString('es-MX',{hour12:false}),1000);
+
+// Fechas default = hoy
+const hoy = new Date().toISOString().split('T')[0];
+document.getElementById('f-desde').value = hoy;
+document.getElementById('f-hasta').value = hoy;
+desde=hoy; hasta=hoy;
+
+/* FIREBASE */
+onValue(ref(db,'historial'),snap=>{ historial=snap.val()?Object.values(snap.val()):[];  actualizarTodo(); });
+onValue(ref(db,'observacion'),snap=>{ observacion=snap.val()||{}; actualizarTodo(); });
+onValue(ref(db,'seguimientos'),snap=>{ seguimientos=snap.val()||{}; actualizarAdmin(); });
+onValue(ref(db,'pacientes'),snap=>{ pacientesActivos=snap.val()?Object.values(snap.val()):[];  actualizarTodo(); });
+
+/* FILTROS */
+window.aplicarFiltros=()=>{
+  desde=document.getElementById('f-desde').value;
+  hasta=document.getElementById('f-hasta').value;
+  actualizarTodo();
+};
+window.setHoy=()=>{
+  const h=new Date().toISOString().split('T')[0];
+  document.getElementById('f-desde').value=h;
+  document.getElementById('f-hasta').value=h;
+  aplicarFiltros();
+};
+window.setSemana=()=>{
+  const h=new Date();
+  const lunes=new Date(h); lunes.setDate(h.getDate()-h.getDay()+1);
+  document.getElementById('f-desde').value=lunes.toISOString().split('T')[0];
+  document.getElementById('f-hasta').value=h.toISOString().split('T')[0];
+  aplicarFiltros();
+};
+window.setMes=()=>{
+  const h=new Date();
+  document.getElementById('f-desde').value=new Date(h.getFullYear(),h.getMonth(),1).toISOString().split('T')[0];
+  document.getElementById('f-hasta').value=h.toISOString().split('T')[0];
+  aplicarFiltros();
+};
+
+function filtrar(lista){
+  return lista.filter(p=>{
+    if(!p.timestamp&&!p.fecha) return true;
+    const f=p.timestamp?new Date(p.timestamp).toISOString().split('T')[0]:(p.fecha||hoy);
+    return f>=desde && f<=hasta;
+  });
+}
+
+function actualizarTodo(){
+  // Unir historial + activos
+  const mapa={};
+  [...historial,...pacientesActivos].forEach(p=>{ if(p.id) mapa[p.id]=p; });
+  const todos=Object.values(mapa);
+  datosFiltrados=filtrar(todos);
+
+  document.getElementById('filtro-label').textContent=
+    `${datosFiltrados.length} registros · ${desde}${desde!==hasta?' → '+hasta:''}`;
+  document.getElementById('f-total-pac').textContent=datosFiltrados.length;
+  document.getElementById('f-p1').textContent=datosFiltrados.filter(p=>p.prioridad===1).length;
+  const dxUnicos=new Set(datosFiltrados.filter(p=>p.diagnostico).map(p=>p.diagnostico.toLowerCase())).size;
+  document.getElementById('f-dx').textContent=dxUnicos;
+
+  actualizarKPIs();
+  actualizarGraficaPrio();
+  actualizarGraficaHora();
+  actualizarGraficaTipo();
+  actualizarDemografia();
+  actualizarPeriodo();
+  actualizarEpi();
+  actualizarAdmin();
+  actualizarInv();
+}
+
+/* ══════ KPIs ══════ */
+function actualizarKPIs(){
+  const total=datosFiltrados.length;
+  document.getElementById('k-total').textContent=total;
+  document.getElementById('k-total-sub').textContent=`registros · ${desde===hasta?desde:'período'}`;
+
+  // Tiempo promedio espera (entre hora de registro y hora de alta)
+  const tiempos=datosFiltrados.filter(p=>p.timestamp&&p.timestampAlta)
+    .map(p=>(p.timestampAlta-p.timestamp)/60000);
+  const promEspera=tiempos.length?Math.round(tiempos.reduce((a,b)=>a+b,0)/tiempos.length):null;
+  document.getElementById('k-espera').textContent=promEspera?promEspera+'':'—';
+
+  const primera=datosFiltrados.filter(p=>p.tipoConsulta==='primera').length;
+  const subsec=datosFiltrados.filter(p=>p.tipoConsulta&&p.tipoConsulta!=='primera').length;
+  const urgentes=datosFiltrados.filter(p=>p.prioridad<=2).length;
+
+  document.getElementById('k-primera').textContent=primera;
+  document.getElementById('k-subsec').textContent=subsec;
+  document.getElementById('k-urgentes').textContent=urgentes;
+
+  if(total>0){
+    document.getElementById('kb-primera').style.width=(primera/total*100)+'%';
+    document.getElementById('kb-subsec').style.width=(subsec/total*100)+'%';
+    document.getElementById('kb-urgentes').style.width=(urgentes/total*100)+'%';
+  }
+}
+
+/* ══════ GRÁFICA PRIORIDADES ══════ */
+function actualizarGraficaPrio(){
+  const cnts=[1,2,3,4,5].map(p=>datosFiltrados.filter(x=>x.prioridad===p).length);
+  renderChart('chart-prio','doughnut',{
+    labels:['P1 Rojo','P2 Naranja','P3 Amarillo','P4 Verde','P5 Azul'],
+    datasets:[{data:cnts,backgroundColor:['#E63946','#F4A261','#E9C46A','#2A9D8F','#0694A2'],borderWidth:0}]
+  },{plugins:{legend:{position:'right',labels:{color:'#6B7C93',font:{size:10}}}}});
+}
+
+/* ══════ GRÁFICA AFLUENCIA POR HORA ══════ */
+function actualizarGraficaHora(){
+  const horas=Array(24).fill(0);
+  datosFiltrados.forEach(p=>{
+    if(p.hora){
+      const h=parseInt(p.hora.split(':')[0]);
+      if(!isNaN(h)) horas[h]++;
+    }
+  });
+  const labels=Array.from({length:24},(_,i)=>i+':00');
+  renderChart('chart-hora','bar',{
+    labels,datasets:[{data:horas,backgroundColor:'rgba(107,70,193,.6)',borderColor:'#6B46C1',borderWidth:1}]
+  },{scales:{x:{ticks:{color:'#6B7C93',font:{size:9}}},y:{ticks:{color:'#6B7C93',stepSize:1}}},plugins:{legend:{display:false}}});
+}
+
+/* ══════ GRÁFICA TIPO CONSULTA ══════ */
+function actualizarGraficaTipo(){
+  const tipos={primera:0,subsecuente:0,urgencia:0,seguimiento:0,referencia:0,sinregistro:0};
+  datosFiltrados.forEach(p=>{
+    const t=p.tipoConsulta||'sinregistro';
+    if(tipos[t]!==undefined) tipos[t]++;
+    else tipos.sinregistro++;
+  });
+  renderChart('chart-tipo','pie',{
+    labels:['Primera vez','Subsecuente','Urgencia','Seguimiento','Referencia','Sin registro'],
+    datasets:[{data:Object.values(tipos),backgroundColor:['#457B9D','#0694A2','#E63946','#6B46C1','#2A9D8F','#4A5568'],borderWidth:0}]
+  },{plugins:{legend:{position:'right',labels:{color:'#6B7C93',font:{size:10}}}}});
+}
+
+/* ══════ DEMOGRAFÍA ══════ */
+function actualizarDemografia(){
+  const total=datosFiltrados.length;
+  if(total===0){document.getElementById('demografia-body').innerHTML='<div class="empty">Sin datos</div>';return;}
+  const masc=datosFiltrados.filter(p=>p.sexo==='Masculino').length;
+  const fem=datosFiltrados.filter(p=>p.sexo==='Femenino').length;
+  const edades=datosFiltrados.map(p=>parseInt(p.edad)).filter(e=>!isNaN(e)&&e>0);
+  const promEdad=edades.length?Math.round(edades.reduce((a,b)=>a+b,0)/edades.length):null;
+  const pediatricos=datosFiltrados.filter(p=>parseInt(p.edad)<=14).length;
+  const adultos=datosFiltrados.filter(p=>parseInt(p.edad)>14&&parseInt(p.edad)<=59).length;
+  const mayores=datosFiltrados.filter(p=>parseInt(p.edad)>=60).length;
+
+  document.getElementById('demografia-body').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-bottom:3px">MASCULINO</div>
+        <div style="font-size:20px;font-weight:700;color:var(--B)">${masc} <span style="font-size:12px;color:var(--mute)">(${total?Math.round(masc/total*100):0}%)</span></div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-bottom:3px">FEMENINO</div>
+        <div style="font-size:20px;font-weight:700;color:var(--O)">${fem} <span style="font-size:12px;color:var(--mute)">(${total?Math.round(fem/total*100):0}%)</span></div>
+      </div>
+    </div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--mute);margin-bottom:6px">GRUPOS DE EDAD</div>
+    <div style="display:flex;flex-direction:column;gap:5px">
+      ${[['🧒 Pediátrico (0-14)', pediatricos, '#0694A2'],
+         ['👤 Adulto (15-59)', adultos, '#457B9D'],
+         ['👴 Adulto mayor (60+)', mayores, '#6B46C1']].map(([label,cnt,color])=>`
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-size:12px;flex:1">${label}</div>
+          <div style="font-size:13px;font-weight:700;color:${color}">${cnt}</div>
+          <div style="width:60px;background:var(--brd);border-radius:3px;height:5px">
+            <div style="width:${total?cnt/total*100:0}%;background:${color};height:100%;border-radius:3px"></div>
+          </div>
+        </div>`).join('')}
+    </div>
+    ${promEdad?`<div style="margin-top:10px;font-family:var(--mono);font-size:10px;color:var(--mute)">Edad promedio: <strong style="color:var(--txt)">${promEdad} años</strong></div>`:''}`;
+}
+
+/* ══════ PERÍODO ══════ */
+function actualizarPeriodo(){
+  // Agrupar por día
+  const porDia={};
+  datosFiltrados.forEach(p=>{
+    const f=p.timestamp?new Date(p.timestamp).toISOString().split('T')[0]:(p.fecha||hoy);
+    if(!porDia[f]) porDia[f]={total:0,p1:0,p2:0,p3:0,p4:0,p5:0,primera:0,subsec:0};
+    porDia[f].total++;
+    porDia[f]['p'+(p.prioridad||5)]++;
+    if(p.tipoConsulta==='primera') porDia[f].primera++;
+    else if(p.tipoConsulta) porDia[f].subsec++;
+  });
+
+  const dias=Object.keys(porDia).sort();
+  const totales=dias.map(d=>porDia[d].total);
+  const urgentes=dias.map(d=>porDia[d].p1+porDia[d].p2);
+
+  renderChart('chart-dias','bar',{
+    labels:dias,
+    datasets:[{label:'Total',data:totales,backgroundColor:'rgba(107,70,193,.7)',borderColor:'#6B46C1',borderWidth:1}]
+  },{scales:{x:{ticks:{color:'#6B7C93',font:{size:9}}},y:{ticks:{color:'#6B7C93'}}},plugins:{legend:{display:false}}});
+
+  renderChart('chart-urgencias-dias','line',{
+    labels:dias,
+    datasets:[{label:'P1+P2',data:urgentes,borderColor:'#E63946',backgroundColor:'rgba(230,57,70,.1)',fill:true,tension:.3}]
+  },{scales:{x:{ticks:{color:'#6B7C93',font:{size:9}}},y:{ticks:{color:'#6B7C93'}}},plugins:{legend:{display:false}}});
+
+  // Tabla
+  const tbody=document.getElementById('tabla-dias');
+  if(dias.length===0){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--mute)">Sin datos</td></tr>';return;}
+  tbody.innerHTML=dias.map(d=>{
+    const row=porDia[d];
+    return `<tr>
+      <td style="font-family:var(--mono)">${d}</td>
+      <td style="font-weight:700">${row.total}</td>
+      <td style="color:var(--R)">${row.p1}</td>
+      <td style="color:var(--O)">${row.p2}</td>
+      <td style="color:var(--Y)">${row.p3}</td>
+      <td style="color:var(--G)">${row.p4}</td>
+      <td style="color:var(--T)">${row.p5}</td>
+      <td>${row.primera}</td>
+      <td>${row.subsec}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ══════ EPIDEMIOLOGÍA ══════ */
+function actualizarEpi(){
+  // Contar diagnósticos
+  const cntDx={}, cntCie={};
+  datosFiltrados.forEach(p=>{
+    if(p.diagnostico){
+      const dx=p.diagnostico.trim();
+      cntDx[dx]=(cntDx[dx]||0)+1;
+    }
+    if(p.cie10){
+      const cie=p.cie10.trim().toUpperCase();
+      if(!cntCie[cie]) cntCie[cie]={cnt:0,dx:p.diagnostico||'—'};
+      cntCie[cie].cnt++;
+    }
+  });
+
+  const topDx=Object.entries(cntDx).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const total=datosFiltrados.length||1;
+
+  // Top diagnósticos barras
+  const topDxEl=document.getElementById('top-dx');
+  if(topDx.length===0){topDxEl.innerHTML='<div class="empty">Sin diagnósticos registrados en el período</div>';return;}
+  topDxEl.innerHTML=topDx.map(([dx,cnt])=>`
+    <div class="dx-bar">
+      <div class="dx-nombre">${dx}</div>
+      <div class="dx-barra"><div class="dx-fill" style="width:${cnt/topDx[0][1]*100}%"></div></div>
+      <div class="dx-cnt">${cnt}</div>
+    </div>`).join('');
+
+  // Gráfica diagnósticos por semana
+  const porSemana={};
+  datosFiltrados.filter(p=>p.diagnostico).forEach(p=>{
+    const f=p.timestamp?new Date(p.timestamp):new Date();
+    const sem=`S${getWeekNumber(f)}`;
+    if(!porSemana[sem]) porSemana[sem]={};
+    const dx=p.diagnostico.trim();
+    porSemana[sem][dx]=(porSemana[sem][dx]||0)+1;
+  });
+  const semanas=Object.keys(porSemana).sort();
+  const top5dx=topDx.slice(0,5).map(([dx])=>dx);
+  const colors=['#E63946','#F4A261','#2A9D8F','#6B46C1','#0694A2'];
+  renderChart('chart-dx-semana','bar',{
+    labels:semanas,
+    datasets:top5dx.map((dx,i)=>({
+      label:dx.slice(0,20),
+      data:semanas.map(s=>porSemana[s][dx]||0),
+      backgroundColor:colors[i]+'88',borderColor:colors[i],borderWidth:1
+    }))
+  },{scales:{x:{stacked:true,ticks:{color:'#6B7C93',font:{size:9}}},y:{stacked:true,ticks:{color:'#6B7C93'}}},plugins:{legend:{labels:{color:'#6B7C93',font:{size:9}}}}});
+
+  // Tabla CIE-10
+  const topCie=Object.entries(cntCie).sort((a,b)=>b[1].cnt-a[1].cnt).slice(0,10);
+  const tbodyCie=document.getElementById('tabla-cie');
+  tbodyCie.innerHTML=topCie.length===0
+    ?'<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--mute)">Sin códigos CIE-10 registrados</td></tr>'
+    :topCie.map(([cie,{cnt,dx}])=>`
+      <tr>
+        <td style="font-family:var(--mono);font-weight:700;color:var(--P)">${cie}</td>
+        <td>${dx}</td>
+        <td style="font-weight:700;font-family:var(--mono)">${cnt}</td>
+        <td style="font-family:var(--mono)">${Math.round(cnt/total*100)}%</td>
+      </tr>`).join('');
+
+  // Gráfica grupos de edad
+  const grupos=[0,0,0,0,0];
+  datosFiltrados.forEach(p=>{
+    const e=parseInt(p.edad);
+    if(isNaN(e)) return;
+    if(e<=4) grupos[0]++;
+    else if(e<=14) grupos[1]++;
+    else if(e<=29) grupos[2]++;
+    else if(e<=59) grupos[3]++;
+    else grupos[4]++;
+  });
+  renderChart('chart-edad','bar',{
+    labels:['0-4','5-14','15-29','30-59','60+'],
+    datasets:[{data:grupos,backgroundColor:['#0694A2','#2A9D8F','#457B9D','#6B46C1','#E63946'],borderWidth:0}]
+  },{scales:{x:{ticks:{color:'#6B7C93'}},y:{ticks:{color:'#6B7C93'}}},plugins:{legend:{display:false}}});
+}
+
+/* ══════ ADMINISTRACIÓN ══════ */
+function actualizarAdmin(){
+  const obsActivos=Object.keys(observacion).length;
+  const segActivos=Object.values(seguimientos).filter(s=>!s.completado).length;
+  const segVenc=Object.values(seguimientos).filter(s=>!s.completado&&s.fechaCita<hoy).length;
+
+  document.getElementById('ka-obs').textContent=obsActivos;
+  document.getElementById('ka-seg').textContent=segActivos;
+  document.getElementById('ka-seg-venc').textContent=segVenc;
+  document.getElementById('ka-banderas').textContent=datosFiltrados.filter(p=>(p.banderas||[]).length>0).length;
+
+  // Pacientes frecuentes
+  const hace30=Date.now()-30*24*60*60*1000;
+  const visitasMapa={};
+  historial.forEach(h=>{
+    if(!h.nombre||(h.timestamp&&h.timestamp<hace30)) return;
+    const k=h.nombre.toLowerCase();
+    if(!visitasMapa[k]) visitasMapa[k]={cnt:0,ultima:h,nombre:h.nombre};
+    visitasMapa[k].cnt++;
+    if((h.timestampAlta||0)>(visitasMapa[k].ultima.timestampAlta||0)) visitasMapa[k].ultima=h;
+  });
+  const frecuentes=Object.values(visitasMapa).filter(v=>v.cnt>=3).sort((a,b)=>b.cnt-a.cnt);
+  document.getElementById('ka-frec').textContent=frecuentes.length;
+  const tablaFrec=document.getElementById('tabla-frecuentes');
+  tablaFrec.innerHTML=frecuentes.length===0
+    ?'<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--mute)">Sin pacientes frecuentes</td></tr>'
+    :frecuentes.map(v=>`<tr>
+      <td style="font-weight:600">${v.nombre}</td>
+      <td style="font-family:var(--mono);font-weight:700;color:var(--Y)">${v.cnt}</td>
+      <td>${v.ultima.diagnostico||v.ultima.motivo||'—'}</td>
+      <td style="font-family:var(--mono)">${v.ultima.fechaAlta||v.ultima.fecha||'—'}</td>
+    </tr>`).join('');
+
+  // Top medicamentos en observación
+  const cntMeds={}, cntEst={};
+  Object.values(observacion).forEach(obs=>{
+    (obs.medicamentos||[]).forEach(m=>{ if(m.nombre) cntMeds[m.nombre]=(cntMeds[m.nombre]||0)+1; });
+    (obs.estudios||[]).forEach(e=>{ if(e.nombre) cntEst[e.nombre]=(cntEst[e.nombre]||0)+1; });
+  });
+  historial.forEach(h=>{
+    (h.medicamentosObs||[]).forEach(m=>{ if(m.nombre) cntMeds[m.nombre]=(cntMeds[m.nombre]||0)+1; });
+    (h.estudiosObs||[]).forEach(e=>{ if(e.nombre) cntEst[e.nombre]=(cntEst[e.nombre]||0)+1; });
+  });
+
+  const topMeds=Object.entries(cntMeds).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const topEst=Object.entries(cntEst).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxMed=topMeds[0]?.[1]||1, maxEst=topEst[0]?.[1]||1;
+
+  document.getElementById('top-meds').innerHTML=topMeds.length===0
+    ?'<div class="empty">Sin datos</div>'
+    :topMeds.map(([n,c])=>`<div class="dx-bar"><div class="dx-nombre">${n}</div><div class="dx-barra"><div class="dx-fill" style="width:${c/maxMed*100}%;background:var(--G)"></div></div><div class="dx-cnt">${c}</div></div>`).join('');
+
+  document.getElementById('top-estudios').innerHTML=topEst.length===0
+    ?'<div class="empty">Sin datos</div>'
+    :topEst.map(([n,c])=>`<div class="dx-bar"><div class="dx-nombre">${n}</div><div class="dx-barra"><div class="dx-fill" style="width:${c/maxEst*100}%;background:var(--B)"></div></div><div class="dx-cnt">${c}</div></div>`).join('');
+}
+
+/* ══════ INVESTIGACIÓN ══════ */
+function actualizarInv(){
+  document.getElementById('inv-total').textContent=datosFiltrados.length+' registros';
+  const tbody=document.getElementById('tbody-inv');
+  const muestra=datosFiltrados.slice(0,20);
+  tbody.innerHTML=muestra.length===0
+    ?'<tr><td colspan="12" style="text-align:center;padding:20px;color:var(--mute)">Sin datos en el período</td></tr>'
+    :muestra.map((p,i)=>{
+      const edad=parseInt(p.edad)||0;
+      const grupoEdad=edad<=4?'0-4':edad<=14?'5-14':edad<=29?'15-29':edad<=59?'30-59':'60+';
+      return `<tr>
+        <td style="font-family:var(--mono)">${i+1}</td>
+        <td>${p.edad||'?'}</td>
+        <td>${p.sexo?p.sexo[0]:'?'}</td>
+        <td style="font-family:var(--mono)">${grupoEdad}</td>
+        <td><span class="badge b-p${p.prioridad||5}">P${p.prioridad||'?'}</span></td>
+        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(p.motivo||'—').replace('[SEGUIMIENTO] ','')}</td>
+        <td>${p.diagnostico||'—'}</td>
+        <td style="font-family:var(--mono)">${p.cie10||'—'}</td>
+        <td>${p.tipoConsulta||'—'}</td>
+        <td style="text-align:center">${p.dolor||0}</td>
+        <td style="text-align:center">${p.enObservacion||p.vitalesObs?.length?'✓':''}</td>
+        <td style="font-family:var(--mono)">${p.fecha||p.fechaAlta||'—'}</td>
+      </tr>`;
+    }).join('');
+}
+
+/* ══════ EXPORTAR EXCEL ══════ */
+window.exportarExcel=()=>{
+  const wb=XLSX.utils.book_new();
+  const anonimizar=p=>{
+    const edad=parseInt(p.edad)||0;
+    return {
+      'ID':p.id||'',
+      'Edad':p.edad||'',
+      'Grupo_Edad':edad<=4?'0-4':edad<=14?'5-14':edad<=29?'15-29':edad<=59?'30-59':'60+',
+      'Sexo':p.sexo||'',
+      'Prioridad':p.prioridad||'',
+      'Color_Triage':p.color||'',
+      'Motivo':p.motivo?.replace('[SEGUIMIENTO] ','')||'',
+      'Diagnostico':p.diagnostico||'',
+      'CIE10':p.cie10||'',
+      'Tipo_Consulta':p.tipoConsulta||'',
+      'Dolor_0_10':p.dolor||0,
+      'Acompanante':p.acomp||'',
+      'En_Observacion':p.vitalesObs?.length||p.enObservacion?'Sí':'No',
+      'Banderas_Alarma':(p.banderas||[]).length,
+      'Fecha':p.fecha||p.fechaAlta||'',
+      'Hora':p.hora||'',
+      'Destino':p.destino||'',
+    };
+  };
+
+  // Hoja 1: datos clínicos
+  const ws1=XLSX.utils.json_to_sheet(datosFiltrados.map(anonimizar));
+  XLSX.utils.book_append_sheet(wb,ws1,'Datos clinicos');
+
+  // Hoja 2: diagnósticos
+  const cntDx={};
+  datosFiltrados.forEach(p=>{ if(p.diagnostico) cntDx[p.diagnostico]=(cntDx[p.diagnostico]||0)+1; });
+  const dxData=Object.entries(cntDx).sort((a,b)=>b[1]-a[1]).map(([dx,cnt])=>({Diagnostico:dx,Casos:cnt,Porcentaje:Math.round(cnt/datosFiltrados.length*100)+'%'}));
+  const ws2=XLSX.utils.json_to_sheet(dxData);
+  XLSX.utils.book_append_sheet(wb,ws2,'Diagnosticos');
+
+  // Hoja 3: CIE-10
+  const cntCie={};
+  datosFiltrados.forEach(p=>{ if(p.cie10) cntCie[p.cie10.toUpperCase()]=(cntCie[p.cie10.toUpperCase()]||0)+1; });
+  const cieData=Object.entries(cntCie).sort((a,b)=>b[1]-a[1]).map(([cie,cnt])=>({CIE10:cie,Casos:cnt}));
+  const ws3=XLSX.utils.json_to_sheet(cieData);
+  XLSX.utils.book_append_sheet(wb,ws3,'CIE-10');
+
+  XLSX.writeFile(wb,`triage_datos_${desde}_${hasta}.xlsx`);
+};
+
+/* ══════ EXPORTAR CSV ══════ */
+window.exportarCSV=()=>{
+  const campos=['id','edad','sexo','prioridad','color','motivo','diagnostico','cie10','tipoConsulta','dolor','acomp','fecha','hora','destino'];
+  const header=campos.join(',');
+  const rows=datosFiltrados.map(p=>campos.map(c=>{
+    let v=p[c]||'';
+    if(c==='motivo') v=String(v).replace('[SEGUIMIENTO] ','');
+    return `"${String(v).replace(/"/g,'""')}"`;
+  }).join(','));
+  const csv=header+'\n'+rows.join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url;
+  a.download=`triage_${desde}_${hasta}.csv`; a.click();
+  URL.revokeObjectURL(url);
+};
+
+/* ══════ RESUMEN MENSUAL ══════ */
+window.exportarResumenMensual=()=>{
+  const total=datosFiltrados.length;
+  const masc=datosFiltrados.filter(p=>p.sexo==='Masculino').length;
+  const fem=datosFiltrados.filter(p=>p.sexo==='Femenino').length;
+  const pediatricos=datosFiltrados.filter(p=>parseInt(p.edad)<=14).length;
+  const adultos=datosFiltrados.filter(p=>parseInt(p.edad)>14&&parseInt(p.edad)<60).length;
+  const mayores=datosFiltrados.filter(p=>parseInt(p.edad)>=60).length;
+  const cnts=[1,2,3,4,5].map(p=>datosFiltrados.filter(x=>x.prioridad===p).length);
+  const cntDx={};
+  datosFiltrados.forEach(p=>{ if(p.diagnostico) cntDx[p.diagnostico]=(cntDx[p.diagnostico]||0)+1; });
+  const topDx=Object.entries(cntDx).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const ahora=new Date().toLocaleString('es-MX');
+
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  <title>Resumen Mensual</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:24px;max-width:750px;margin:0 auto;}
+    h1{font-size:20px;margin-bottom:4px;}h2{font-size:14px;margin:16px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;}
+    .sub{font-size:11px;color:#555;margin-bottom:16px;}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+    .kpi{background:#f5f5f5;border-radius:6px;padding:10px;text-align:center;}
+    .kpi-v{font-size:24px;font-weight:700;}
+    .kpi-l{font-size:9px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+    table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px;}
+    th{background:#f0f0f0;padding:6px 10px;text-align:left;border:1px solid #ddd;}
+    td{padding:6px 10px;border:1px solid #eee;}
+    .footer{margin-top:24px;font-size:10px;color:#999;border-top:1px solid #ddd;padding-top:8px;}
+    @media print{body{padding:10px;}}
+  </style><script src="triage-auth.js"></script>
+<link rel="stylesheet" href="triage-ssa.css">
+</head><body>
+  <h1>✚ RESUMEN DE ATENCIÓN</h1>
+  <p class="sub">Centro de Salud · Período: ${desde} al ${hasta} · Generado: ${ahora}</p>
+  <h2>Indicadores Generales</h2>
+  <div class="grid">
+    <div class="kpi"><div class="kpi-v">${total}</div><div class="kpi-l">Total consultas</div></div>
+    <div class="kpi"><div class="kpi-v">${masc}</div><div class="kpi-l">Masculino</div></div>
+    <div class="kpi"><div class="kpi-v">${fem}</div><div class="kpi-l">Femenino</div></div>
+    <div class="kpi"><div class="kpi-v">${pediatricos}</div><div class="kpi-l">Pediátricos</div></div>
+    <div class="kpi"><div class="kpi-v">${adultos}</div><div class="kpi-l">Adultos</div></div>
+    <div class="kpi"><div class="kpi-v">${mayores}</div><div class="kpi-l">Adultos mayores</div></div>
+    <div class="kpi"><div class="kpi-v" style="color:#E63946">${cnts[0]+cnts[1]}</div><div class="kpi-l">Urgencias P1+P2</div></div>
+    <div class="kpi"><div class="kpi-v">${Object.keys(cntDx).length}</div><div class="kpi-l">Diagnósticos únicos</div></div>
+  </div>
+  <h2>Distribución por Nivel de Triage</h2>
+  <table><thead><tr><th>Prioridad</th><th>Casos</th><th>Porcentaje</th></tr></thead><tbody>
+    ${['P1 Rojo','P2 Naranja','P3 Amarillo','P4 Verde','P5 Azul'].map((n,i)=>
+      `<tr><td>${n}</td><td>${cnts[i]}</td><td>${total?Math.round(cnts[i]/total*100):0}%</td></tr>`).join('')}
+  </tbody></table>
+  <h2>Top 10 Diagnósticos</h2>
+  <table><thead><tr><th>Diagnóstico</th><th>Casos</th><th>%</th></tr></thead><tbody>
+    ${topDx.map(([dx,cnt])=>`<tr><td>${dx}</td><td>${cnt}</td><td>${Math.round(cnt/total*100)}%</td></tr>`).join('')}
+  </tbody></table>
+  <div class="footer">Sistema de Triage Automatizado · ${ahora}</div>
+  <script>setTimeout(()=>window.print(),500)<\/script>
+  </body></html>`);
+  w.document.close();
+};
+
+/* ══════ HELPERS ══════ */
+function renderChart(id,type,data,options={}){
+  if(charts[id]) charts[id].destroy();
+  const canvas=document.getElementById(id);
+  if(!canvas) return;
+  charts[id]=new Chart(canvas,{type,data,options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#6B7C93'}}},
+    ...options
+  }});
+}
+
+function getWeekNumber(d){
+  const onejan=new Date(d.getFullYear(),0,1);
+  return Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7);
+}
+
+window.showTab=tab=>{
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('tab-'+tab).classList.add('on');
+  document.getElementById('panel-'+tab).classList.add('on');
+  // Re-renderizar gráficas al cambiar tab (por si el canvas no estaba visible)
+  setTimeout(actualizarTodo,100);
+};
+
+// Arrancar
+aplicarFiltros();
+</script>
+</body>
+</html>

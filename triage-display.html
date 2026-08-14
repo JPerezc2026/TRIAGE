@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRIAGE — Display Sala</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Institucional */
+  --guinda:#7B1428;--guinda-dk:#5C0E1C;--guinda-lt:#F9EEF1;
+  --verde:#1B4D35;--verde-dk:#113223;--verde-lt:#EAF3EE;
+  --dorado:#C4A96A;--dorado-lt:#FBF6EC;
+  /* Superficies */
+  --bg:#F4F6F9;--panel:#FFFFFF;--panel2:#F0F2F5;--brd:#D1D5DB;--brd2:#E5E7EB;
+  /* Texto */
+  --txt:#111827;--txt2:#374151;--mute:#6B7280;--mute2:#9CA3AF;
+  /* Manchester invariable */
+  --R:#DC2626;--O:#EA580C;--Y:#CA8A04;--G:#16A34A;--T:#0891B2;--B:#1D4ED8;--P:#7C3AED;
+  /* Tipografía */
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans','Outfit',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;}
+
+/* HEADER */
+.hdr{background:var(--panel);border-bottom:2px solid var(--brd);padding:14px 36px;display:flex;align-items:center;justify-content:space-between;}
+.hlogo{display:flex;align-items:center;gap:14px;}
+.hcruz{font-size:28px;color:var(--R);animation:blink 2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.htit{font-family:var(--mono);font-size:18px;font-weight:700;letter-spacing:4px;}
+.hsub{font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:2px;margin-top:2px;}
+#clk{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--G);letter-spacing:3px;}
+#fecha{font-family:var(--mono);font-size:11px;color:var(--mute);letter-spacing:1px;text-align:right;margin-top:2px;}
+#total-n{font-family:var(--mono);font-size:30px;font-weight:900;}
+
+/* TICKER */
+.ticker{background:#090E1B;border-top:1px solid var(--brd);border-bottom:1px solid var(--brd);padding:8px 0;overflow:hidden;white-space:nowrap;}
+.ticker-inner{display:inline-block;animation:tick 30s linear infinite;font-family:var(--mono);font-size:11px;color:var(--mute);letter-spacing:1px;padding-left:100%;}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+
+/* ALERTA P1 */
+#alerta{display:none;margin:14px 32px 0;background:var(--R);color:#fff;font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:4px;padding:16px 28px;border-radius:8px;text-align:center;animation:flash .55s ease-in-out infinite alternate;}
+@keyframes flash{from{opacity:1}to{opacity:.35}}
+
+/* GRID COLUMNAS */
+.main{flex:1;padding:16px 28px 20px;display:flex;flex-direction:column;gap:14px;}
+.cols{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;flex:1;}
+
+.col{background:var(--panel);border:1px solid var(--brd);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;}
+.col-hdr{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;}
+.col-tit{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:2px;}
+.col-badge{font-family:var(--mono);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;color:#000;}
+.col-body{flex:1;padding:10px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:480px;}
+
+/* COLORES COLUMNAS */
+.c1 .col-hdr{background:rgba(230,57,70,.1);border-bottom:2px solid var(--R);}
+.c2 .col-hdr{background:rgba(244,162,97,.08);border-bottom:2px solid var(--O);}
+.c3 .col-hdr{background:rgba(233,196,106,.08);border-bottom:2px solid var(--Y);}
+.c4 .col-hdr{background:rgba(42,157,143,.08);border-bottom:2px solid var(--G);}
+.c5 .col-hdr{background:rgba(6,148,162,.08);border-bottom:2px solid var(--T);}
+.b1{background:var(--R);}
+.b2{background:var(--O);}
+.b3{background:var(--Y);}
+.b4{background:var(--G);}
+.b5{background:var(--T);}
+
+/* TARJETA */
+.dcard{border-radius:8px;padding:12px;background:#080D18;border:1px solid var(--brd);position:relative;animation:pop .4s ease;}
+@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.dc-num{font-family:var(--mono);font-size:9px;color:var(--mute);margin-bottom:3px;}
+.dc-nom{font-size:15px;font-weight:700;color:#fff;margin-bottom:3px;line-height:1.2;}
+.dc-edad{font-family:var(--mono);font-size:10px;color:var(--mute);margin-bottom:7px;}
+.dc-dest{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.5px;padding:5px 9px;border-radius:5px;display:block;text-align:center;}
+.dc-cama{font-family:var(--mono);font-size:13px;font-weight:900;color:#22D3EE;letter-spacing:1px;text-align:center;margin:4px 0 2px;padding:4px 0;border-top:1px solid rgba(34,211,238,.25);}
+.dc-hora{position:absolute;top:8px;right:9px;font-family:var(--mono);font-size:9px;color:var(--mute);}
+.dc-seg{position:absolute;top:8px;left:9px;font-size:9px;}
+.dd1{background:rgba(230,57,70,.18);color:var(--R);}
+.dd2{background:rgba(244,162,97,.18);color:var(--O);}
+.dd3{background:rgba(233,196,106,.18);color:var(--Y);}
+.dd4{background:rgba(42,157,143,.18);color:var(--G);}
+.dd5{background:rgba(6,148,162,.18);color:var(--T);}
+.empty-col{color:var(--mute);font-size:11px;font-family:var(--mono);text-align:center;padding:28px 0;opacity:.35;font-style:italic;}
+
+/* FOOTER */
+footer{background:var(--panel);border-top:1px solid var(--brd);padding:10px 36px;display:flex;align-items:center;gap:22px;flex-wrap:wrap;}
+.fi{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;}
+.fdot{width:8px;height:8px;border-radius:50%;}
+.fnum{font-size:15px;font-weight:700;}
+.live{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--G);display:flex;align-items:center;gap:6px;}
+.ldot{width:5px;height:5px;border-radius:50%;background:var(--G);animation:blink 1.5s ease-in-out infinite;}
+
+/* ── HEADER INSTITUCIONAL ── */
+header{background:var(--guinda)!important;border-bottom:3px solid var(--dorado)!important;color:#fff!important;}
+header .lt,.lt{color:#fff!important;}
+header .ls,.ls{color:rgba(255,255,255,.65)!important;}
+header #clk{color:var(--dorado)!important;}
+header .hbtn{border-color:rgba(255,255,255,.35)!important;color:rgba(255,255,255,.8)!important;}
+header .hbtn:hover{border-color:#fff!important;color:#fff!important;background:rgba(255,255,255,.1)!important;}
+/* Logo badge en header */
+header .cruz{background:var(--dorado)!important;color:var(--guinda)!important;}
+/* Badge sesión */
+#sesion-badge{color:rgba(255,255,255,.75)!important;}
+/* ── BODY / FONDO ── */
+body{background:var(--bg)!important;color:var(--txt)!important;}
+/* ── PANELES ── */
+.panel,.card,.calc,.col,.sidebar,.pdet,.content,.ficha,.kpi,.mod-card{background:var(--panel)!important;border-color:var(--brd)!important;color:var(--txt)!important;}
+.panel2,.panel-lista,.tb,.buscador,.toolbar,.filtros,.tabs{background:var(--panel2)!important;}
+/* ── TEXTO GENERAL ── */
+.mute,.mute2,[style*="color:#6B7C93"],[style*="color:#4A5568"]{color:var(--mute)!important;}
+/* ── BOTÓN PRINCIPAL ── */
+.btn-ok,.btn-calc,.buscar-btn,.fbtn,.btn-filtrar,.btn-imp-resumen,.btn-llamar{background:var(--verde)!important;color:#fff!important;}
+.btn-ok:hover,.btn-calc:hover,.buscar-btn:hover,.fbtn:hover,.btn-llamar:hover{background:var(--verde-dk)!important;}
+/* ── INPUTS ── */
+.inp,.fi,.tb-input,.fi-inp,.buscar-input,.buscar-inp{background:var(--panel2)!important;border-color:var(--brd)!important;color:var(--txt)!important;}
+.inp:focus,.fi:focus,.tb-input:focus,.fi-inp:focus,.buscar-input:focus,.buscar-inp:focus{border-color:var(--verde)!important;}
+/* ── SIDEBAR ── */
+.sidebar{background:var(--panel)!important;border-color:var(--brd)!important;}
+.pac-item:hover,.pac-card:hover,.seg-card:hover,.prow:hover{background:var(--verde-lt)!important;}
+.pac-item.activo,.pac-card.sel,.seg-card.sel,.prow.sel{background:var(--verde-lt)!important;border-left-color:var(--verde)!important;}
+/* ── TABS ── */
+.tab{color:var(--mute)!important;}
+.tab.on{color:var(--guinda)!important;border-bottom-color:var(--guinda)!important;}
+.tab:hover{color:var(--guinda-dk)!important;}
+/* ── TABLA ── */
+.tabla th,thead th{color:var(--mute)!important;border-color:var(--brd)!important;background:var(--panel2)!important;}
+tbody tr:hover td{background:var(--verde-lt)!important;}
+/* ── TICKER (display) ── */
+.ticker{background:var(--guinda-dk)!important;border-color:var(--guinda)!important;}
+.ticker-inner{color:rgba(255,255,255,.6)!important;}
+/* ── TOPBAR (index) ── */
+.topbar{background:var(--guinda)!important;border-color:var(--guinda-dk)!important;}
+.tb-title,.tb-sub{color:#fff!important;}
+#clk{color:var(--dorado)!important;}
+/* ── KPI STRIP ── */
+.kpi-strip{background:var(--panel)!important;border-color:var(--brd)!important;}
+/* ── MODULO CARD ── */
+.mod-card{border-color:var(--brd)!important;color:var(--txt)!important;}
+.mod-card:hover{box-shadow:0 8px 32px rgba(123,20,40,.12)!important;}
+/* ── FOOTER DISPLAY ── */
+footer{background:var(--guinda)!important;border-color:var(--guinda-dk)!important;color:#fff!important;}
+footer .fi{color:rgba(255,255,255,.8)!important;}
+/* ── HEADER DISPLAY ── */
+.hdr{background:var(--guinda)!important;border-color:var(--guinda-dk)!important;}
+.htit,.hsub,.hlogo{color:#fff!important;}
+
+
+/* DISPLAY: mantener fondo oscuro para sala de espera */
+body{background:#050811!important;color:#E8F4FD!important;}
+.col,.dcard{background:#0C1322!important;border-color:#141F30!important;color:#E8F4FD!important;}
+.hdr{background:var(--guinda)!important;}
+.dc-nom{color:#fff!important;}
+
+</style>
+<link rel="stylesheet" href="triage-ssa.css">
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hlogo">
+  <div class="logo-ssa" style="display:flex;align-items:center;gap:10px;flex-shrink:0;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 48" height="36" style="display:block">
+  <circle cx="20" cy="24" r="17" fill="#C4A96A" opacity=".9"/>
+  <circle cx="20" cy="24" r="13" fill="#7B1428"/>
+  <text x="20" y="29" text-anchor="middle" font-size="14" fill="#C4A96A" font-family="serif">🦅</text>
+  <text x="44" y="18" font-size="11" fill="#ffffff" font-family="IBM Plex Sans,sans-serif" font-weight="700" letter-spacing=".3">Secretaría de Salud</text>
+  <line x1="44" y1="22" x2="172" y2="22" stroke="#C4A96A" stroke-width="1" opacity=".6"/>
+  <text x="44" y="34" font-size="9" fill="rgba(255,255,255,.7)" font-family="IBM Plex Sans,sans-serif" letter-spacing=".5">GOBIERNO DE MÉXICO</text>
+</svg></div>
+    <div class="hcruz">✚</div>
+    <div>
+      <div class="htit">TRIAGE DISPLAY</div>
+      <div class="hsub">SALA DE ESPERA — ATENCIÓN POR PRIORIDAD CLÍNICA</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:28px;">
+    <div>
+      <div id="clk">--:--:--</div>
+      <div id="fecha">--</div>
+    </div>
+    <div style="text-align:center;">
+      <div id="total-n" style="color:#fff">0</div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:1px;">TOTAL</div>
+    </div>
+  </div>
+</div>
+
+<div class="ticker"><div class="ticker-inner" id="ticker-txt">POR FAVOR ESPERE A SER LLAMADO · SE ATIENDE POR PRIORIDAD CLÍNICA, NO POR ORDEN DE LLEGADA · SISTEMA DE TRIAGE AUTOMATIZADO EN OPERACIÓN</div></div>
+
+<div id="alerta">⚠ PACIENTE CRÍTICO — LLAMAR A PERSONAL MÉDICO DE INMEDIATO</div>
+
+<div class="main">
+  <div class="cols">
+    <div class="col c1">
+      <div class="col-hdr">
+        <div><div class="col-tit">P1 — ROJO</div><div style="font-size:9px;color:#ccc;font-family:var(--mono);letter-spacing:1px;margin-top:1px">Riesgo vital</div></div>
+        <div class="col-badge b1" id="b1">0</div>
+      </div>
+      <div class="col-body" id="col1"></div>
+    </div>
+    <div class="col c2">
+      <div class="col-hdr">
+        <div><div class="col-tit">P2 — NARANJA</div><div style="font-size:9px;color:#ccc;font-family:var(--mono);letter-spacing:1px;margin-top:1px">Emergencia</div></div>
+        <div class="col-badge b2" id="b2">0</div>
+      </div>
+      <div class="col-body" id="col2"></div>
+    </div>
+    <div class="col c3">
+      <div class="col-hdr">
+        <div><div class="col-tit">P3 — AMARILLO</div><div style="font-size:9px;color:#ccc;font-family:var(--mono);letter-spacing:1px;margin-top:1px">Urgente</div></div>
+        <div class="col-badge b3" id="b3">0</div>
+      </div>
+      <div class="col-body" id="col3"></div>
+    </div>
+    <div class="col c4">
+      <div class="col-hdr">
+        <div><div class="col-tit">P4 — VERDE</div><div style="font-size:9px;color:#ccc;font-family:var(--mono);letter-spacing:1px;margin-top:1px">Menor urgencia</div></div>
+        <div class="col-badge b4" id="b4">0</div>
+      </div>
+      <div class="col-body" id="col4"></div>
+    </div>
+    <div class="col c5">
+      <div class="col-hdr">
+        <div><div class="col-tit">P5 — AZUL</div><div style="font-size:9px;color:#ccc;font-family:var(--mono);letter-spacing:1px;margin-top:1px">Consulta / Seguimiento</div></div>
+        <div class="col-badge b5" id="b5">0</div>
+      </div>
+      <div class="col-body" id="col5"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="fi"><div class="fdot" style="background:var(--R)"></div><span class="fnum" id="f1">0</span> críticos</div>
+  <div class="fi"><div class="fdot" style="background:var(--O)"></div><span class="fnum" id="f2">0</span> emergencia</div>
+  <div class="fi"><div class="fdot" style="background:var(--Y)"></div><span class="fnum" id="f3">0</span> urgente</div>
+  <div class="fi"><div class="fdot" style="background:var(--G)"></div><span class="fnum" id="f4">0</span> menor</div>
+  <div class="fi"><div class="fdot" style="background:var(--T)"></div><span class="fnum" id="f5">0</span> azul/seg.</div>
+  <div class="live"><div class="ldot"></div>ACTUALIZANDO EN TIEMPO REAL</div>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCDTgiL6OvNFYh-PC4g57GTw04pclU-nfs",
+  authDomain: "triage-centro-de-salud.firebaseapp.com",
+  databaseURL: "https://triage-centro-de-salud-default-rtdb.firebaseio.com",
+  projectId: "triage-centro-de-salud",
+  storageBucket: "triage-centro-de-salud.firebasestorage.app",
+  messagingSenderId: "66063012451",
+  appId: "1:66063012451:web:8be493b361302fbd185e56"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+let pacs=[];
+
+/* RELOJ */
+setInterval(()=>{
+  const n=new Date();
+  document.getElementById('clk').textContent=n.toLocaleTimeString('es-MX',{hour12:false});
+  document.getElementById('fecha').textContent=n.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+},1000);
+
+/* RENDER COLA */
+function render(lista){
+  [1,2,3,4,5].forEach(p=>{
+    const col=document.getElementById('col'+p);
+    const grp=lista.filter(x=>x.prioridad===p);
+    document.getElementById('b'+p).textContent=grp.length;
+    document.getElementById('f'+p).textContent=grp.length;
+    if(grp.length===0){col.innerHTML='<div class="empty-col">Sin pacientes</div>';return;}
+    col.innerHTML=grp.map(pac=>{
+      const esSeg=pac.motivo&&pac.motivo.startsWith('[SEGUIMIENTO]');
+      return `<div class="dcard">
+        <div class="dc-hora">${pac.hora}</div>
+        ${esSeg?'<div class="dc-seg">📋</div>':''}
+        <div class="dc-num" style="${esSeg?'padding-left:18px':''}">#${pac.num}</div>
+        <div class="dc-nom">${pac.nombre}</div>
+        <div class="dc-edad">${pac.edad?pac.edad+' años':''} ${pac.sexo?'· '+pac.sexo:''}</div>
+        ${pac.numeroCama?'<div class="dc-cama">🛏 CAMA '+pac.numeroCama+'</div>':''}
+        <div class="dc-dest dd${p}">${pac.destino}</div>
+      </div>`;
+    }).join('');
+  });
+  const total=lista.length;
+  document.getElementById('total-n').textContent=total;
+  document.getElementById('alerta').style.display=lista.filter(x=>x.prioridad===1).length>0?'block':'none';
+  if(lista.length>0){
+    const u=lista[lista.length-1];
+    const esSeg=u.motivo&&u.motivo.startsWith('[SEGUIMIENTO]');
+    document.getElementById('ticker-txt').textContent=
+      `NUEVO PACIENTE: ${u.nombre.toUpperCase()} → ${u.destino.toUpperCase()}  ·  `+
+      `${esSeg?'SEGUIMIENTO':'URGENCIA '+u.color}  ·  `+
+      `TOTAL EN ESPERA: ${total}  ·  `+
+      `CRÍTICOS: ${lista.filter(x=>x.prioridad===1).length}  ·  `+
+      `SE ATIENDE POR PRIORIDAD CLÍNICA, NO POR ORDEN DE LLEGADA  ·  POR FAVOR ESPERE A SER LLAMADO`;
+  }
+}
+
+/* ══════════════════════════════════
+   OVERLAY DE LLAMADA DE PACIENTE
+   ══════════════════════════════════ */
+function tocarSonidoDisplay(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const notas=[523,659,784,1046]; // Do-Mi-Sol-Do alto
+    notas.forEach((freq,i)=>{
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type='sine';
+      osc.frequency.setValueAtTime(freq,ctx.currentTime+i*0.22);
+      gain.gain.setValueAtTime(0,ctx.currentTime+i*0.22);
+      gain.gain.linearRampToValueAtTime(0.25,ctx.currentTime+i*0.22+0.05);
+      gain.gain.linearRampToValueAtTime(0,ctx.currentTime+i*0.22+0.3);
+      osc.start(ctx.currentTime+i*0.22);
+      osc.stop(ctx.currentTime+i*0.22+0.35);
+    });
+  }catch(e){}
+}
+
+let llamadaTimeout=null;
+function mostrarLlamada(datos){
+  // Crear o actualizar overlay
+  let overlay=document.getElementById('llamada-overlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='llamada-overlay';
+    overlay.style.cssText=`
+      position:fixed;inset:0;z-index:1000;
+      background:rgba(6,20,42,.96);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      animation:llamadaIn .4s ease;
+    `;
+    document.body.appendChild(overlay);
+    // Agregar keyframe si no existe
+    if(!document.getElementById('llamada-style')){
+      const s=document.createElement('style');
+      s.id='llamada-style';
+      s.textContent=`
+        @keyframes llamadaIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+        @keyframes pulseGlow{0%,100%{box-shadow:0 0 40px rgba(6,148,162,.4)}50%{box-shadow:0 0 80px rgba(6,148,162,.8)}}
+        @keyframes llamadaNombre{0%{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+      `;
+      document.head.appendChild(s);
+    }
+  }
+
+  const PCOLS={1:'#E63946',2:'#F4A261',3:'#E9C46A',4:'#2A9D8F',5:'#0694A2'};
+  const color=PCOLS[datos.prioridad||5];
+
+  overlay.innerHTML=`
+    <div style="
+      background:var(--panel);border:3px solid ${color};border-radius:24px;
+      padding:50px 80px;text-align:center;max-width:700px;width:90%;
+      animation:pulseGlow 2s ease-in-out infinite;
+    ">
+      <div style="font-family:var(--mono);font-size:14px;letter-spacing:4px;color:${color};margin-bottom:20px;font-weight:700;">
+        🔔 LLAMADO AL CONSULTORIO
+      </div>
+      <div style="
+        font-family:'IBM Plex Sans',sans-serif;
+        font-size:clamp(36px,6vw,72px);font-weight:900;
+        color:#fff;line-height:1.1;margin-bottom:16px;
+        animation:llamadaNombre .5s ease;
+      ">${datos.nombre}</div>
+      <div style="font-family:var(--mono);font-size:18px;color:${color};margin-bottom:8px;font-weight:700;">
+        #${datos.num} → ${datos.destino}
+      </div>
+      ${datos.cama?`
+      <div style="
+        display:inline-block;background:${color}22;border:2px solid ${color};
+        border-radius:10px;padding:8px 24px;margin:8px 0;
+        font-family:var(--mono);font-size:20px;font-weight:700;color:${color};letter-spacing:3px;
+      ">🛏 CAMA ${datos.cama}</div>`:''}
+      <div style="font-family:var(--mono);font-size:12px;color:var(--mute);margin-top:20px;letter-spacing:2px;">
+        POR FAVOR DIRÍJASE AL ÁREA INDICADA
+      </div>
+    </div>
+  `;
+  overlay.style.display='flex';
+
+  // Tocar sonido
+  tocarSonidoDisplay();
+
+  // Ocultar después de 10 segundos
+  if(llamadaTimeout) clearTimeout(llamadaTimeout);
+  llamadaTimeout=setTimeout(()=>{
+    if(overlay){
+      overlay.style.transition='opacity .5s';
+      overlay.style.opacity='0';
+      setTimeout(()=>overlay.remove(),500);
+    }
+  },10000);
+}
+
+/* ESCUCHAR PACIENTES EN COLA */
+onValue(ref(db,'pacientes'),snap=>{
+  const val=snap.val();
+  pacs=val?Object.values(val):[];
+  render(pacs);
+});
+
+/* ESCUCHAR LLAMADA ACTIVA */
+let ultimaLlamada=null;
+onValue(ref(db,'llamada_activa'),snap=>{
+  const datos=snap.val();
+  if(!datos){
+    // Llamada borrada — ya no hacer nada (el timeout la cierra)
+    return;
+  }
+  // Solo mostrar si es una llamada nueva (diferente timestamp)
+  if(datos.timestamp!==ultimaLlamada){
+    ultimaLlamada=datos.timestamp;
+    mostrarLlamada(datos);
+  }
+});
+
+render([]);
+</script>
+</script>
+</body>
+</html>
