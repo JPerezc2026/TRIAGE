@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TRIAGE — Observación</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Manchester invariable */
+  --R:#E63946;--O:#F4A261;--Y:#E9C46A;--G:#2A9D8F;--B:#457B9D;--T:#0694A2;--P:#6B46C1;
+  /* Superficies */
+  --bg:#0A0E1A;--panel:#111827;--panel2:#0D1520;--brd:#1E2D3D;--brd2:#1E2D3D;
+  /* Texto */
+  --txt:#E8F4FD;--txt2:#E8F4FD;--mute:#6B7C93;--mute2:#4A5568;
+  /* Acento de acción (alta / éxito) */
+  --verde:#2A9D8F;--verde-dk:#1F7A6F;--verde-lt:rgba(42,157,143,.18);--ssa-verde:#0694A2;
+  /* Tipografía */
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans','Outfit',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* HEADER */
+header{background:var(--panel);border-bottom:1px solid var(--brd);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.logo{display:flex;align-items:center;gap:10px;}
+.cruz{width:30px;height:30px;background:var(--T);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.lt{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:3px;}
+.ls{font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:2px;}
+#clk{font-family:var(--mono);font-size:15px;color:var(--T);letter-spacing:2px;}
+.hbtn{background:transparent;border:1px solid var(--mute);color:var(--mute);font-family:var(--mono);font-size:10px;letter-spacing:1px;padding:5px 11px;border-radius:4px;cursor:pointer;transition:all .2s;}
+.hbtn:hover{border-color:var(--txt);color:var(--txt);}
+
+/* ALERTAS BANNER */
+#alertas-banner{display:none;background:var(--R);padding:8px 20px;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:2px;color:#fff;animation:flash .6s ease-in-out infinite alternate;flex-shrink:0;}
+@keyframes flash{from{opacity:1}to{opacity:.4}}
+
+/* LAYOUT */
+.main{display:grid;grid-template-columns:280px 1fr;flex:1;min-height:0;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{background:var(--panel);border-right:1px solid var(--brd);overflow-y:auto;display:flex;flex-direction:column;}
+.sb-hdr{padding:12px 16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.sb-tit{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:var(--mute);}
+.sb-badge{background:var(--T);color:#000;font-family:var(--mono);font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;}
+.sb-list{padding:10px;display:flex;flex-direction:column;gap:7px;}
+.pac-card{background:var(--panel2);border:1px solid var(--brd);border-radius:8px;padding:11px 12px;cursor:pointer;transition:all .2s;border-left:4px solid var(--T);position:relative;}
+.pac-card:hover{background:#0f1c2e;}
+.pac-card.sel{background:#0a1828;box-shadow:0 0 0 1px var(--T)55;}
+.pac-card.alerta-card{border-left-color:var(--R)!important;animation:border-pulse 1.5s ease-in-out infinite;}
+@keyframes border-pulse{0%,100%{border-left-color:var(--R)}50%{border-left-color:#ff8888}}
+.pc-nom{font-size:12px;font-weight:700;margin-bottom:2px;}
+.pc-meta{font-family:var(--mono);font-size:9px;color:var(--mute);margin-bottom:5px;}
+.pc-tiempo{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;}
+.pc-dot{width:5px;height:5px;border-radius:50%;background:var(--G);animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.pc-prio{font-family:var(--mono);font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;}
+.pp1{background:rgba(230,57,70,.15);color:var(--R);}
+.pp2{background:rgba(244,162,97,.15);color:var(--O);}
+.pp3{background:rgba(233,196,106,.15);color:var(--Y);}
+.pp4{background:rgba(42,157,143,.15);color:var(--G);}
+.pp5{background:rgba(6,148,162,.15);color:var(--T);}
+.alerta-pip{position:absolute;top:8px;right:8px;background:var(--R);color:#fff;font-family:var(--mono);font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;animation:pulse .8s ease-in-out infinite;}
+.empty-sb{padding:30px 16px;text-align:center;color:var(--mute);font-family:var(--mono);font-size:11px;opacity:.5;line-height:2;}
+
+/* CONTENIDO */
+.content{overflow-y:auto;display:flex;flex-direction:column;}
+.content-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--mute);font-family:var(--mono);font-size:12px;text-align:center;gap:10px;opacity:.4;}
+
+/* FICHA */
+.ficha{padding:16px 20px;display:flex;flex-direction:column;gap:12px;}
+
+/* HEADER FICHA */
+.ficha-hdr{background:var(--panel);border:1px solid var(--brd);border-radius:10px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.fh-left{display:flex;align-items:center;gap:12px;}
+.fh-nom{font-size:17px;font-weight:700;}
+.fh-meta{font-family:var(--mono);font-size:10px;color:var(--mute);margin-top:3px;}
+.fh-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+.fh-timer-lbl{font-family:var(--mono);font-size:9px;color:var(--mute);}
+.fh-reloj{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--T);}
+.fh-btns{display:flex;gap:6px;margin-top:2px;}
+.btn-print{background:var(--B);border:none;color:#fff;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1px;padding:6px 12px;border-radius:5px;cursor:pointer;transition:opacity .2s;}
+.btn-print:hover{opacity:.8;}
+.btn-alta{background:var(--R);border:none;color:#fff;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1px;padding:6px 12px;border-radius:5px;cursor:pointer;transition:opacity .2s;}
+.btn-alta:hover{opacity:.8;}
+
+/* ALERTAS CLÍNICAS */
+.alertas-box{border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.alertas-box.hay-alertas{background:rgba(230,57,70,.12);border:1px solid rgba(230,57,70,.4);}
+.alertas-box.sin-alertas{background:rgba(42,157,143,.08);border:1px solid rgba(42,157,143,.2);}
+.alerta-chip{background:var(--R);color:#fff;font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;animation:pulse .8s ease-in-out infinite;}
+.ok-chip{font-family:var(--mono);font-size:10px;color:var(--G);}
+
+/* REVALORACIÓN */
+.revaloracion-box{background:var(--panel);border:1px solid var(--brd);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.rev-lbl{font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:2px;}
+.rev-timer{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--Y);}
+.rev-timer.vencido{color:var(--R);animation:pulse .8s ease-in-out infinite;}
+.rev-btns{display:flex;gap:6px;margin-left:auto;}
+.rbtn-rev{background:var(--panel2);border:1px solid var(--brd);color:var(--mute);font-family:var(--mono);font-size:10px;padding:5px 11px;border-radius:6px;cursor:pointer;transition:all .2s;}
+.rbtn-rev:hover{border-color:var(--Y);color:var(--Y);}
+.rbtn-rev.activo{background:rgba(233,196,106,.15);border-color:var(--Y);color:var(--Y);}
+
+/* GRID SECCIONES */
+.secciones{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sec-full{grid-column:1/-1;}
+.seccion{background:var(--panel);border:1px solid var(--brd);border-radius:10px;overflow:hidden;}
+.sec-hdr{padding:10px 14px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;}
+.sec-tit{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--mute);font-weight:700;}
+.sec-cnt{font-family:var(--mono);font-size:9px;color:var(--mute2);}
+.sec-body{padding:10px 14px;display:flex;flex-direction:column;gap:7px;max-height:240px;overflow-y:auto;}
+
+/* VITALES DISPLAY */
+.vitales-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px;}
+.vc{background:var(--panel2);border:1px solid var(--brd);border-radius:7px;padding:8px 10px;position:relative;}
+.vc.alerta-vital{border-color:var(--R);background:rgba(230,57,70,.08);}
+.vc.alerta-vital .vc-val{color:var(--R);}
+.vc-lbl{font-family:var(--mono);font-size:8px;color:var(--mute);letter-spacing:1px;margin-bottom:3px;}
+.vc-val{font-size:16px;font-weight:700;color:var(--txt);}
+.vc-hora{font-family:var(--mono);font-size:8px;color:var(--mute2);margin-top:2px;}
+.vc-alerta-ico{position:absolute;top:5px;right:6px;font-size:12px;}
+
+/* TENDENCIA */
+.tendencia{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;margin-top:2px;}
+.tend-up{color:var(--R);}
+.tend-down{color:var(--B);}
+.tend-stable{color:var(--G);}
+
+/* FORM RÁPIDO */
+.qform{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.qi{background:var(--panel2);border:1px solid var(--brd);border-radius:5px;color:var(--txt);font-family:var(--sans);font-size:12px;padding:6px 9px;outline:none;transition:border-color .2s;min-width:0;}
+.qi:focus{border-color:var(--T);}
+.qi::placeholder{color:var(--mute2);}
+.qbtn{background:var(--T);border:none;color:#000;font-family:var(--mono);font-size:9px;font-weight:700;padding:6px 11px;border-radius:5px;cursor:pointer;white-space:nowrap;transition:opacity .2s;}
+.qbtn:hover{opacity:.8;}
+
+/* ITEMS */
+.reg-item{background:var(--panel2);border:1px solid var(--brd);border-radius:6px;padding:9px 11px;display:flex;align-items:flex-start;justify-content:space-between;gap:7px;animation:slideIn .25s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.ri-info{flex:1;}
+.ri-txt{font-size:12px;color:var(--txt);line-height:1.4;}
+.ri-hora{font-family:var(--mono);font-size:9px;color:var(--mute);margin-top:2px;}
+.ri-del{background:transparent;border:none;color:var(--mute2);cursor:pointer;font-size:13px;padding:1px 3px;transition:color .2s;flex-shrink:0;}
+.ri-del:hover{color:var(--R);}
+.ri-badge{font-family:var(--mono);font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;margin-top:3px;display:inline-block;}
+.badge-med{background:rgba(42,157,143,.15);color:var(--G);}
+.badge-pend{background:rgba(233,196,106,.15);color:var(--Y);}
+.badge-hecho{background:rgba(42,157,143,.15);color:var(--G);}
+.btn-listo{background:var(--G);border:none;color:#fff;font-family:var(--mono);font-size:8px;padding:3px 7px;border-radius:4px;cursor:pointer;margin-top:3px;}
+
+/* NOTAS */
+.nota-item{background:var(--panel2);border-left:3px solid var(--T);border-radius:0 6px 6px 0;padding:9px 11px;animation:slideIn .25s ease;}
+.nota-txt{font-size:12px;line-height:1.6;color:var(--txt);white-space:pre-wrap;}
+.nota-meta{font-family:var(--mono);font-size:9px;color:var(--mute);margin-top:4px;display:flex;align-items:center;justify-content:space-between;}
+
+.empty-sec{color:var(--mute);font-size:11px;font-family:var(--mono);text-align:center;padding:14px 0;opacity:.35;}
+
+/* FOOTER */
+footer{background:var(--panel);border-top:1px solid var(--brd);padding:8px 20px;display:flex;gap:16px;align-items:center;flex-shrink:0;}
+.fi{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;}
+.fdot{width:6px;height:6px;border-radius:50%;}
+.live{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--T);display:flex;align-items:center;gap:5px;}
+.ldot{width:5px;height:5px;border-radius:50%;background:var(--T);animation:pulse 1.5s ease-in-out infinite;}
+
+/* ═══════════════════════════════════════════
+   OPTIMIZACIÓN iPAD LANDSCAPE
+   ═══════════════════════════════════════════ */
+@media (min-width: 768px) and (orientation: landscape) {
+  html, body { height: 100%; overflow: hidden; }
+  * { -webkit-tap-highlight-color: transparent; }
+
+  /* Header compacto */
+  header { padding: 8px 18px; }
+
+  /* Sidebar más ancha — más espacio para tarjetas */
+  .main { grid-template-columns: 320px 1fr; height: calc(100vh - 98px); }
+
+  /* Sidebar scroll suave */
+  .sidebar { -webkit-overflow-scrolling: touch; }
+  .sb-hdr { padding: 10px 14px; }
+
+  /* Tarjetas de paciente táctiles */
+  .pac-card {
+    padding: 13px 14px;
+    min-height: 64px;
+    touch-action: manipulation;
+    border-radius: 10px;
+  }
+  .pc-nom { font-size: 14px; }
+  .pc-meta { font-size: 11px; }
+
+  /* Input búsqueda más alto */
+  #obs-buscar {
+    padding: 10px 10px 10px 34px !important;
+    font-size: 13px !important;
+    min-height: 44px;
+  }
+
+  /* Panel de contenido */
+  .content { -webkit-overflow-scrolling: touch; }
+  .ficha { padding: 14px 16px; gap: 10px; }
+
+  /* Header ficha — botones táctiles */
+  .ficha-hdr { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+  .btn-alta, .btn-print {
+    padding: 10px 16px;
+    font-size: 10px;
+    min-height: 44px;
+    min-width: 80px;
+    border-radius: 7px;
+    touch-action: manipulation;
+  }
+
+  /* Secciones clínicas en 2 cols — más espacio en landscape */
+  .secciones { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Vitales grid — 5 cols caben bien en iPad */
+  .vitales-grid { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .vc { padding: 10px; }
+
+  /* Revaloracion botones */
+  .rbtn-rev {
+    padding: 9px 14px;
+    font-size: 11px;
+    min-height: 40px;
+    touch-action: manipulation;
+  }
+
+  /* Sec body scroll */
+  .sec-body { max-height: 200px; -webkit-overflow-scrolling: touch; }
+
+  /* Alertas chips más visibles */
+  .alerta-chip { font-size: 11px; padding: 6px 12px; }
+}
+
+/* iPad Pro 12.9" */
+@media (min-width: 1366px) and (orientation: landscape) {
+  .main { grid-template-columns: 360px 1fr; }
+  .pac-card { min-height: 70px; }
+  .vitales-grid { grid-template-columns: repeat(6, 1fr); }
+  .btn-alta, .btn-print { min-height: 48px; font-size: 11px; }
+}
+
+</style>
+<script src="triage-auth.js"></script>
+<link rel="stylesheet" href="triage-ssa.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="cruz" style="background:var(--ssa-verde)!important;font-size:16px">🛏</div>
+    <div><div class="lt">OBSERVACIÓN</div><div class="ls">SEGUIMIENTO CLÍNICO EN TIEMPO REAL</div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div id="clk">--:--:--</div>
+    <button class="hbtn" onclick="window.open('triage-medico.html')">← MÉDICO</button>
+    <button class="hbtn" onclick="window.open('triage-expedientes.html')">📁 EXPEDIENTES</button>
+    <button class="hbtn" onclick="window.open('triage-reportes.html')">📊 REPORTES</button>
+  </div>
+</header>
+
+<div id="alertas-banner">⚠ ALERTA CLÍNICA — REVISAR PACIENTE DE INMEDIATO</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sb-hdr">
+      <div class="sb-tit">EN OBSERVACIÓN</div>
+      <div class="sb-badge" id="obs-badge">0</div>
+    </div>
+    <div style="padding:8px 10px;border-bottom:1px solid var(--brd);">
+      <div style="position:relative;">
+        <input id="obs-buscar" placeholder="Buscar por nombre, folio o cama..." oninput="renderSidebar()" 
+          style="width:100%;background:var(--panel2);border:1px solid var(--brd);border-radius:6px;color:var(--txt);font-family:var(--sans);font-size:11px;padding:7px 10px 7px 30px;outline:none;transition:border-color .2s;"
+          onfocus="this.style.borderColor='var(--verde)'" onblur="this.style.borderColor='var(--brd)'">
+        <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none;">🔍</span>
+        <span id="obs-buscar-clear" onclick="limpiarBusqueda()" title="Limpiar"
+          style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:14px;color:var(--mute);line-height:1;">✕</span>
+      </div>
+    </div>
+    <div class="sb-list" id="sb-list">
+      <div class="empty-sb">Sin pacientes<br>en observación</div>
+    </div>
+  </div>
+
+  <div class="content" id="content">
+    <div class="content-empty">
+      <div style="font-size:36px">🛏</div>
+      Selecciona un paciente<br>para ver su expediente
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="fi"><div class="fdot" style="background:var(--T)"></div><span id="f-total">0</span> en obs.</div>
+  <div class="fi"><div class="fdot" style="background:var(--R)"></div><span id="f-alertas">0</span> con alertas</div>
+  <div class="fi"><div class="fdot" style="background:var(--Y)"></div><span id="f-revaloracion">0</span> revaloracion pendiente</div>
+  <div class="live"><div class="ldot"></div>TIEMPO REAL</div>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, update, remove, set, push }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCDTgiL6OvNFYh-PC4g57GTw04pclU-nfs",
+  authDomain: "triage-centro-de-salud.firebaseapp.com",
+  databaseURL: "https://triage-centro-de-salud-default-rtdb.firebaseio.com",
+  projectId: "triage-centro-de-salud",
+  storageBucket: "triage-centro-de-salud.firebasestorage.app",
+  messagingSenderId: "66063012451",
+  appId: "1:66063012451:web:8be493b361302fbd185e56"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+const obsRef = ref(db, 'observacion');
+
+let pacientes = {}, selId = null;
+const ICOS = {1:'🚨',2:'⚠️',3:'🔶',4:'✅',5:'🔵'};
+
+/* ══════════════════════════════════
+   ALERTAS CLÍNICAS — umbrales
+   ══════════════════════════════════ */
+function verificarAlertas(p){
+  const alertas = [];
+  const vits = p.vitales || [];
+  if(vits.length === 0) return alertas;
+  const u = vits[vits.length - 1]; // último registro
+
+  // SpO2
+  const sato2 = parseFloat(u.sato2);
+  if(!isNaN(sato2) && sato2 < 90) alertas.push(`⚠ SpO₂ BAJA: ${sato2}%`);
+
+  // Frecuencia cardiaca
+  const fc = parseFloat(u.fc);
+  if(!isNaN(fc)){
+    if(fc > 130) alertas.push(`⚠ TAQUICARDIA: FC ${fc} lpm`);
+    if(fc < 40)  alertas.push(`⚠ BRADICARDIA: FC ${fc} lpm`);
+  }
+
+  // Tensión arterial sistólica
+  if(u.presion){
+    const tas = parseFloat(u.presion.split('/')[0]);
+    if(!isNaN(tas) && tas < 90) alertas.push(`⚠ HIPOTENSIÓN: TAS ${tas} mmHg`);
+  }
+
+  // Temperatura
+  const temp = parseFloat(u.temp);
+  if(!isNaN(temp)){
+    if(temp >= 39)  alertas.push(`⚠ FIEBRE ALTA: ${temp}°C`);
+    if(temp < 35)   alertas.push(`⚠ HIPOTERMIA: ${temp}°C`);
+  }
+
+  // Glucosa
+  const gluc = parseFloat(u.glucosa);
+  if(!isNaN(gluc)){
+    if(gluc < 70)   alertas.push(`⚠ HIPOGLUCEMIA: ${gluc} mg/dL`);
+    if(gluc > 400)  alertas.push(`⚠ HIPERGLUCEMIA: ${gluc} mg/dL`);
+  }
+
+  // Frecuencia respiratoria
+  const fr = parseFloat(u.fr);
+  if(!isNaN(fr)){
+    if(fr > 30) alertas.push(`⚠ TAQUIPNEA: FR ${fr} rpm`);
+    if(fr < 8)  alertas.push(`⚠ BRADIPNEA: FR ${fr} rpm`);
+  }
+
+  return alertas;
+}
+
+/* Calcular tendencia entre últimos 2 vitales */
+function tendencia(vits, campo){
+  if(vits.length < 2) return null;
+  const a = parseFloat(vits[vits.length-2][campo]);
+  const b = parseFloat(vits[vits.length-1][campo]);
+  if(isNaN(a)||isNaN(b)) return null;
+  const diff = b - a;
+  if(Math.abs(diff) < 2) return 'stable';
+  return diff > 0 ? 'up' : 'down';
+}
+
+function iconoTend(t, campo){
+  if(!t) return '';
+  // Para TA y FC: subida es malo (rojo), bajada es azul
+  // Para SpO2 y temp: depende
+  const malo = ['up','down'].includes(t);
+  if(t==='up')     return `<span class="tendencia tend-up">↑</span>`;
+  if(t==='down')   return `<span class="tendencia tend-down">↓</span>`;
+  return `<span class="tendencia tend-stable">→</span>`;
+}
+
+/* ══════════════════════════════
+   TEMPORIZADORES REVALORACION
+   ══════════════════════════════ */
+const revTimers = {}; // id → { fin, interval }
+
+function iniciarRevTimer(id, minutos){
+  if(revTimers[id]) clearInterval(revTimers[id].interval);
+  const fin = Date.now() + minutos * 60 * 1000;
+  update(ref(db,`observacion/${id}`), { revFin: fin, revMin: minutos });
+}
+
+/* ══════════
+   RELOJ
+   ══════════ */
+setInterval(()=>{
+  document.getElementById('clk').textContent = new Date().toLocaleTimeString('es-MX',{hour12:false});
+  // Actualizar todos los timers de observación
+  document.querySelectorAll('.timer-obs').forEach(el=>{
+    const ts = parseInt(el.dataset.ingreso);
+    if(ts) el.textContent = tiempoTranscurrido(ts);
+  });
+  // Actualizar timers de revaloracion
+  document.querySelectorAll('.rev-countdown').forEach(el=>{
+    const fin = parseInt(el.dataset.fin);
+    if(!fin) return;
+    const diff = fin - Date.now();
+    if(diff <= 0){
+      el.textContent = '⚠ VENCIDO';
+      el.classList.add('vencido');
+    } else {
+      const m = Math.floor(diff/60000);
+      const s = Math.floor((diff%60000)/1000);
+      el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      el.classList.remove('vencido');
+    }
+  });
+},1000);
+
+function tiempoTranscurrido(ts){
+  const d = Math.floor((Date.now()-ts)/1000);
+  const h = Math.floor(d/3600);
+  const m = Math.floor((d%3600)/60);
+  if(h>0) return `${h}h ${String(m).padStart(2,'0')}m`;
+  return `${String(m).padStart(2,'0')}m ${String(d%60).padStart(2,'0')}s`;
+}
+
+function hora(){ return new Date().toLocaleTimeString('es-MX',{hour12:false}); }
+function fechaHora(){ return new Date().toLocaleString('es-MX'); }
+
+/* ══════════════
+   FIREBASE
+   ══════════════ */
+onValue(obsRef, snap=>{
+  const val = snap.val();
+  pacientes = val || {};
+  renderSidebar();
+  actualizarFooter();
+  if(selId && pacientes[selId]) renderFicha(selId);
+  else if(selId && !pacientes[selId]){
+    selId=null;
+    document.getElementById('content').innerHTML='<div class="content-empty"><div style="font-size:36px">🛏</div>Selecciona un paciente</div>';
+  }
+});
+
+function actualizarFooter(){
+  const total = Object.keys(pacientes).length;
+  document.getElementById('obs-badge').textContent = total;
+  document.getElementById('f-total').textContent = total;
+  const conAlertas = Object.values(pacientes).filter(p=>verificarAlertas(p).length>0).length;
+  document.getElementById('f-alertas').textContent = conAlertas;
+  const conRev = Object.values(pacientes).filter(p=>p.revFin && p.revFin<Date.now()).length;
+  document.getElementById('f-revaloracion').textContent = conRev;
+  // Banner global si hay alertas
+  document.getElementById('alertas-banner').style.display = conAlertas>0?'block':'none';
+}
+
+/* ══════════════
+   SIDEBAR
+   ══════════════ */
+function limpiarBusqueda(){
+  const inp = document.getElementById('obs-buscar');
+  if(inp){ inp.value=''; inp.focus(); }
+  document.getElementById('obs-buscar-clear').style.display='none';
+  renderSidebar();
+}
+
+function renderSidebar(){
+  // Mostrar/ocultar botón limpiar
+  const inp = document.getElementById('obs-buscar');
+  const clearBtn = document.getElementById('obs-buscar-clear');
+  if(inp && clearBtn) clearBtn.style.display = inp.value ? 'block' : 'none';
+  const list = document.getElementById('sb-list');
+  const buscar = (document.getElementById('obs-buscar')?.value||'').toLowerCase();
+  let pacs = Object.entries(pacientes).sort((a,b)=>a[1].prioridad-b[1].prioridad);
+  if(buscar) pacs=pacs.filter(([id,p])=>
+    p.nombre?.toLowerCase().includes(buscar)||
+    String(p.num).includes(buscar)||
+    p.numeroCama?.toLowerCase().includes(buscar)
+  );
+  if(pacs.length===0){
+    list.innerHTML=buscar
+      ?`<div class="empty-sb" style="padding:20px 12px;text-align:center;color:var(--mute);">
+          <div style="font-size:24px;margin-bottom:8px;">🔍</div>
+          <div style="font-size:12px;font-weight:600;margin-bottom:4px;">Sin resultados</div>
+          <div style="font-size:11px;opacity:.7;margin-bottom:10px;">No hay pacientes con<br><strong>${buscar}</strong></div>
+          <button onclick="limpiarBusqueda()" style="background:var(--verde);color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:10px;cursor:pointer;">✕ Limpiar</button>
+        </div>`
+      :'<div class="empty-sb">Sin pacientes<br>en observación</div>';
+    return;
+  }
+  // Hint de filtrado activo
+  const filtroHint = buscar
+    ? `<div style="font-size:9px;color:var(--verde);font-family:var(--mono);padding:4px 10px;background:var(--verde-lt);border-bottom:1px solid var(--brd);">${pacs.length} resultado${pacs.length!==1?'s':''} · "${buscar}"</div>`
+    : '';
+  list.innerHTML = filtroHint + pacs.map(([id,p])=>{
+    const alertas = verificarAlertas(p);
+    const tieneAlerta = alertas.length > 0;
+    return `<div class="pac-card ${selId===id?'sel':''} ${tieneAlerta?'alerta-card':''}" onclick="selPac('${id}')">
+      ${tieneAlerta?`<div class="alerta-pip">🔴 ${alertas.length}</div>`:''}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+        <div class="pc-meta">#${p.num} · ${p.edad||'?'}a</div>
+        <div class="pc-prio pp${p.prioridad}">${ICOS[p.prioridad]} P${p.prioridad}</div>
+      </div>
+      <div class="pc-nom">${p.nombre}</div>
+      ${p.numeroCama?`<div style="font-family:var(--mono);font-size:9px;color:var(--T);font-weight:700;margin-top:2px;">🛏 Cama ${p.numeroCama}</div>`:''}
+      <div class="pc-tiempo" style="margin-top:5px">
+        <div class="pc-dot"></div>
+        <span class="timer-obs" data-ingreso="${p.ingresoObs||Date.now()}">${tiempoTranscurrido(p.ingresoObs||Date.now())}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.selPac = id=>{ selId=id; renderSidebar(); renderFicha(id); };
+
+/* ══════════════════
+   FICHA COMPLETA
+   ══════════════════ */
+function renderFicha(id){
+  const p = pacientes[id];
+  if(!p) return;
+  const meds  = p.medicamentos||[];
+  const ests  = p.estudios||[];
+  const vits  = p.vitales||[];
+  const notas = p.notas||[];
+  const alertas = verificarAlertas(p);
+  const uv = vits.length>0 ? vits[vits.length-1] : null;
+
+  // Tendencias
+  const tFC   = tendencia(vits,'fc');
+  const tTA   = tendencia(vits,'presion');
+  const tSat  = tendencia(vits,'sato2');
+  const tTemp = tendencia(vits,'temp');
+  const tFR   = tendencia(vits,'fr');
+  const tGluc = tendencia(vits,'glucosa');
+
+  // Verificar qué vitales tienen alerta
+  function esAlerta(campo, val){
+    if(campo==='sato2') return parseFloat(val)<90;
+    if(campo==='fc') return parseFloat(val)>130||parseFloat(val)<40;
+    if(campo==='temp') return parseFloat(val)>=39||parseFloat(val)<35;
+    if(campo==='glucosa') return parseFloat(val)<70||parseFloat(val)>400;
+    if(campo==='presion') return parseFloat((val||'').split('/')[0])<90;
+    if(campo==='fr') return parseFloat(val)>30||parseFloat(val)<8;
+    return false;
+  }
+
+  document.getElementById('content').innerHTML=`
+  <div class="ficha">
+
+    <!-- HEADER -->
+    <div class="ficha-hdr">
+      <div class="fh-left">
+        <div style="font-size:24px">${ICOS[p.prioridad]}</div>
+        <div>
+          <div class="fh-nom">${p.nombre}</div>
+          <div class="fh-meta">#${p.num} · ${p.edad||'?'}a · ${p.sexo||'—'} · Ingresó: ${p.horaIngreso||'--'}</div>
+          ${p.numeroCama?`<div style="margin-top:5px;display:inline-flex;align-items:center;gap:6px;background:rgba(6,148,162,.2);border:1px solid var(--T);border-radius:6px;padding:4px 12px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--T);">🛏 CAMA ${p.numeroCama}</div>`:''}
+          <div class="fh-meta" style="margin-top:4px;color:var(--txt);opacity:.7">${p.motivo||'—'}</div>
+        </div>
+      </div>
+      <div class="fh-right">
+        <div class="fh-timer-lbl">Tiempo en observación</div>
+        <div class="fh-reloj timer-obs" data-ingreso="${p.ingresoObs||Date.now()}">${tiempoTranscurrido(p.ingresoObs||Date.now())}</div>
+        <div class="fh-btns">
+          <button class="btn-print" onclick="imprimirFicha('${id}')">🖨️ Imprimir</button>
+          <button class="btn-alta" onclick="darAltaObs('${id}')">✕ Alta</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTAS CLÍNICAS -->
+    <div class="alertas-box ${alertas.length>0?'hay-alertas':'sin-alertas'}">
+      ${alertas.length>0
+        ? alertas.map(a=>`<div class="alerta-chip">${a}</div>`).join('')
+        : `<span class="ok-chip">✓ Sin alertas clínicas activas</span>`}
+    </div>
+
+    <!-- REVALORACION -->
+    <div class="revaloracion-box">
+      <div>
+        <div class="rev-lbl">REVALORACIÓN PROGRAMADA</div>
+        ${p.revFin
+          ? `<div class="rev-countdown ${p.revFin<Date.now()?'vencido':''}" data-fin="${p.revFin}">
+              ${p.revFin<Date.now()?'⚠ VENCIDO':''}</div>`
+          : `<div style="font-family:var(--mono);font-size:11px;color:var(--mute)">No programada</div>`}
+      </div>
+      <div class="rev-btns">
+        <button class="rbtn-rev ${p.revMin===15?'activo':''}" onclick="programarRev('${id}',15)">15 min</button>
+        <button class="rbtn-rev ${p.revMin===30?'activo':''}" onclick="programarRev('${id}',30)">30 min</button>
+        <button class="rbtn-rev ${p.revMin===60?'activo':''}" onclick="programarRev('${id}',60)">60 min</button>
+        <button class="rbtn-rev ${p.revMin===120?'activo':''}" onclick="programarRev('${id}',120)">120 min</button>
+        ${p.revFin?`<button class="rbtn-rev" onclick="cancelarRev('${id}')" style="border-color:var(--mute2)">✕</button>`:''}
+      </div>
+    </div>
+
+    <div class="secciones">
+
+      <!-- SIGNOS VITALES -->
+      <div class="seccion sec-full">
+        <div class="sec-hdr">
+          <div class="sec-tit">💓 SIGNOS VITALES</div>
+          <span class="sec-cnt">${vits.length} registros</span>
+        </div>
+        <div class="sec-body">
+          ${uv ? `
+          <div class="vitales-grid">
+            <div class="vc ${esAlerta('presion',uv.presion)?'alerta-vital':''}">
+              ${esAlerta('presion',uv.presion)?'<div class="vc-alerta-ico">🔴</div>':''}
+              <div class="vc-lbl">PRESIÓN ART.</div>
+              <div class="vc-val">${uv.presion||'—'}</div>
+              ${iconoTend(tTA,'presion')}
+              <div class="vc-hora">${uv.hora}</div>
+            </div>
+            <div class="vc ${esAlerta('fc',uv.fc)?'alerta-vital':''}">
+              ${esAlerta('fc',uv.fc)?'<div class="vc-alerta-ico">🔴</div>':''}
+              <div class="vc-lbl">FREC. CARDÍACA</div>
+              <div class="vc-val">${uv.fc||'—'} <span style="font-size:11px">lpm</span></div>
+              ${iconoTend(tFC,'fc')}
+              <div class="vc-hora">${uv.hora}</div>
+            </div>
+            <div class="vc ${esAlerta('sato2',uv.sato2)?'alerta-vital':''}">
+              ${esAlerta('sato2',uv.sato2)?'<div class="vc-alerta-ico">🔴</div>':''}
+              <div class="vc-lbl">SAT. O₂</div>
+              <div class="vc-val">${uv.sato2||'—'}<span style="font-size:11px">%</span></div>
+              ${iconoTend(tSat,'sato2')}
+              <div class="vc-hora">${uv.hora}</div>
+            </div>
+            <div class="vc ${esAlerta('temp',uv.temp)?'alerta-vital':''}">
+              ${esAlerta('temp',uv.temp)?'<div class="vc-alerta-ico">🔴</div>':''}
+              <div class="vc-lbl">TEMPERATURA</div>
+              <div class="vc-val">${uv.temp||'—'}<span style="font-size:11px">°C</span></div>
+              ${iconoTend(tTemp,'temp')}
+              <div class="vc-hora">${uv.hora}</div>
+            </div>
+            <div class="vc ${esAlerta('fr',uv.fr)?'alerta-vital':''}">
+              ${esAlerta('fr',uv.fr)?'<div class="vc-alerta-ico">🔴</div>':''}
+              <div class="vc-lbl">FREC. RESP.</div>
+              <div class="vc-val">${uv.fr||'—'} <span style="font-size:11px">rpm</span></div>
+              ${iconoTend(tFR,'fr')}
+              <div class="vc-hora">${uv.hora}</div>
+            </div>
+          </div>
+          ${uv.glucosa!==undefined&&uv.glucosa!==''?`
+          <div class="vitales-grid" style="grid-template-columns:repeat(3,1fr)">
+            <div class="vc ${esAlerta('glucosa',uv.glucosa)?'alerta-vital':''}">
+              ${esAlerta('glucosa',uv.glucosa)?'<div class="vc-alerta-ico">🔴</div>':''}
+              <div class="vc-lbl">GLUCOSA</div>
+              <div class="vc-val">${uv.glucosa} <span style="font-size:11px">mg/dL</span></div>
+              ${iconoTend(tGluc,'glucosa')}
+              <div class="vc-hora">${uv.hora}</div>
+            </div>
+          </div>`:''}` : '<div class="empty-sec">Sin registros de vitales</div>'}
+
+          <!-- FORM VITALES -->
+          <div class="qform" style="margin-top:4px;flex-wrap:wrap;">
+            <input class="qi" id="v-presion" placeholder="TA (120/80)" style="width:90px">
+            <input class="qi" id="v-fc" placeholder="FC" style="width:55px">
+            <input class="qi" id="v-sato2" placeholder="SpO₂%" style="width:60px">
+            <input class="qi" id="v-temp" placeholder="Temp°C" style="width:65px">
+            <input class="qi" id="v-fr" placeholder="FR rpm" style="width:60px">
+            <input class="qi" id="v-glucosa" placeholder="Glucosa" style="width:65px">
+            <button class="qbtn" onclick="agregarVital('${id}')">+ Registrar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MEDICAMENTOS -->
+      <div class="seccion">
+        <div class="sec-hdr">
+          <div class="sec-tit">💊 MEDICAMENTOS</div>
+          <span class="sec-cnt">${meds.length} administrados</span>
+        </div>
+        <div class="sec-body">
+          ${meds.length===0?'<div class="empty-sec">Sin registros</div>':
+            meds.map((m,i)=>`
+            <div class="reg-item">
+              <div class="ri-info">
+                <div class="ri-txt"><strong>${m.nombre}</strong>${m.dosis?' — '+m.dosis:''}</div>
+                ${m.via?`<div class="ri-badge badge-med">${m.via}</div>`:''}
+                <div class="ri-hora">⏱ ${m.hora}</div>
+              </div>
+              <button class="ri-del" onclick="eliminarItem('${id}','medicamentos',${i})">✕</button>
+            </div>`).join('')}
+          <div class="qform" style="margin-top:4px">
+            <input class="qi" id="m-nombre" placeholder="Medicamento" style="flex:1;min-width:100px">
+            <input class="qi" id="m-dosis" placeholder="Dosis" style="width:70px">
+            <input class="qi" id="m-via" placeholder="Vía" style="width:60px">
+            <button class="qbtn" onclick="agregarMed('${id}')">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ESTUDIOS -->
+      <div class="seccion">
+        <div class="sec-hdr">
+          <div class="sec-tit">🔬 ESTUDIOS</div>
+          <span class="sec-cnt">${ests.length} solicitados</span>
+        </div>
+        <div class="sec-body">
+          ${ests.length===0?'<div class="empty-sec">Sin estudios</div>':
+            ests.map((e,i)=>`
+            <div class="reg-item">
+              <div class="ri-info">
+                <div class="ri-txt"><strong>${e.nombre}</strong></div>
+                <div class="ri-badge ${e.estado==='Listo'?'badge-hecho':'badge-pend'}">${e.estado||'Pendiente'}</div>
+                <div class="ri-hora">Solicitado: ${e.hora}</div>
+                ${e.estadoHora?`<div class="ri-hora">Listo: ${e.estadoHora}</div>`:''}
+              </div>
+              <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+                <button class="ri-del" onclick="eliminarItem('${id}','estudios',${i})">✕</button>
+                ${e.estado!=='Listo'?`<button class="btn-listo" onclick="marcarListo('${id}','estudios',${i})">✓ Listo</button>`:''}
+              </div>
+            </div>`).join('')}
+          <div class="qform" style="margin-top:4px">
+            <input class="qi" id="e-nombre" placeholder="BH, RX Tórax, EGO..." style="flex:1">
+            <button class="qbtn" onclick="agregarEstudio('${id}')">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTAS + CALCULADORAS -->
+      <div class="seccion sec-full">
+        <div class="sec-hdr">
+          <div class="sec-tit">📝 NOTAS DE EVOLUCIÓN</div>
+          <span class="sec-cnt">${notas.length} notas</span>
+        </div>
+        <div class="sec-body" style="max-height:500px">
+          ${notas.length===0?'<div class="empty-sec">Sin notas</div>':
+            notas.map((n,i)=>`
+            <div class="nota-item">
+              <div class="nota-txt">${n.texto}</div>
+              <div class="nota-meta">
+                <span style="color:var(--T);font-weight:700">${n.autor||'Personal médico'}</span>
+                <span>${n.fechaHora||n.hora}</span>
+                <button class="ri-del" onclick="eliminarItem('${id}','notas',${i})">✕</button>
+              </div>
+            </div>`).join('')}
+
+          <!-- CALCULADORAS RÁPIDAS -->
+          <div style="background:#080D18;border:1px solid var(--brd);border-radius:8px;padding:12px;margin-top:8px;">
+            <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--mute);margin-bottom:8px;font-weight:700;">🧮 CALCULADORAS → INSERTAR EN NOTA</div>
+            <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;">
+              <button style="background:var(--T);border:none;color:#000;font-family:var(--mono);font-size:9px;font-weight:700;padding:4px 10px;border-radius:4px;cursor:pointer;" onclick="showCalcTab('glasgow-${id}')">Glasgow</button>
+              <button style="background:var(--panel2);border:1px solid var(--brd);color:var(--mute);font-family:var(--mono);font-size:9px;padding:4px 10px;border-radius:4px;cursor:pointer;" onclick="showCalcTab('qsofa-${id}')">qSOFA</button>
+              <button style="background:var(--panel2);border:1px solid var(--brd);color:var(--mute);font-family:var(--mono);font-size:9px;padding:4px 10px;border-radius:4px;cursor:pointer;" onclick="showCalcTab('ic-${id}')">Índ. Choque</button>
+              <button style="background:var(--panel2);border:1px solid var(--brd);color:var(--mute);font-family:var(--mono);font-size:9px;padding:4px 10px;border-radius:4px;cursor:pointer;" onclick="showCalcTab('imc-${id}')">IMC</button>
+            </div>
+            <!-- Glasgow -->
+            <div id="calc-glasgow-${id}">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+                <select class="qi" id="cg-oc-${id}" style="flex:1;min-width:100px" onchange="calcGlasgowObs('${id}')">
+                  <option value="">Ocular…</option><option value="4">O:4 Espontánea</option><option value="3">O:3 Al hablar</option><option value="2">O:2 Al dolor</option><option value="1">O:1 Ninguna</option>
+                </select>
+                <select class="qi" id="cg-ve-${id}" style="flex:1;min-width:100px" onchange="calcGlasgowObs('${id}')">
+                  <option value="">Verbal…</option><option value="5">V:5 Orientado</option><option value="4">V:4 Confuso</option><option value="3">V:3 Palabras</option><option value="2">V:2 Sonidos</option><option value="1">V:1 Ninguna</option>
+                </select>
+                <select class="qi" id="cg-mo-${id}" style="flex:1;min-width:100px" onchange="calcGlasgowObs('${id}')">
+                  <option value="">Motora…</option><option value="6">M:6 Obedece</option><option value="5">M:5 Localiza</option><option value="4">M:4 Retira</option><option value="3">M:3 Flexión</option><option value="2">M:2 Extensión</option><option value="1">M:1 Ninguna</option>
+                </select>
+              </div>
+              <div id="cg-res-${id}" style="font-family:var(--mono);font-size:10px;color:var(--G);margin-bottom:5px;"></div>
+              <button class="qbtn" onclick="insertarCalc('glasgow','${id}')">↓ Insertar en nota</button>
+            </div>
+            <!-- qSOFA -->
+            <div id="calc-qsofa-${id}" style="display:none">
+              <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px;">
+                <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;"><input type="checkbox" id="cqs-tas-${id}" onchange="calcQSOFAObs('${id}')"> TAS ≤ 100 mmHg</label>
+                <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;"><input type="checkbox" id="cqs-fr-${id}" onchange="calcQSOFAObs('${id}')"> FR ≥ 22 rpm</label>
+                <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;"><input type="checkbox" id="cqs-mental-${id}" onchange="calcQSOFAObs('${id}')"> Alteración mental</label>
+              </div>
+              <div id="cqs-res-${id}" style="font-family:var(--mono);font-size:10px;color:var(--G);margin-bottom:5px;"></div>
+              <button class="qbtn" onclick="insertarCalc('qsofa','${id}')">↓ Insertar en nota</button>
+            </div>
+            <!-- IC -->
+            <div id="calc-ic-${id}" style="display:none">
+              <div style="display:flex;gap:6px;margin-bottom:6px;">
+                <input class="qi" id="cic-fc-${id}" type="number" placeholder="FC lpm" style="flex:1" oninput="calcICObs('${id}')">
+                <input class="qi" id="cic-tas-${id}" type="number" placeholder="TAS mmHg" style="flex:1" oninput="calcICObs('${id}')">
+              </div>
+              <div id="cic-res-${id}" style="font-family:var(--mono);font-size:10px;color:var(--G);margin-bottom:5px;"></div>
+              <button class="qbtn" onclick="insertarCalc('ic','${id}')">↓ Insertar en nota</button>
+            </div>
+            <!-- IMC -->
+            <div id="calc-imc-${id}" style="display:none">
+              <div style="display:flex;gap:6px;margin-bottom:6px;">
+                <input class="qi" id="cimc-peso-${id}" type="number" placeholder="Peso kg" style="flex:1" oninput="calcIMCObs('${id}')">
+                <input class="qi" id="cimc-talla-${id}" type="number" placeholder="Talla cm" style="flex:1" oninput="calcIMCObs('${id}')">
+              </div>
+              <div id="cimc-res-${id}" style="font-family:var(--mono);font-size:10px;color:var(--G);margin-bottom:5px;"></div>
+              <button class="qbtn" onclick="insertarCalc('imc','${id}')">↓ Insertar en nota</button>
+            </div>
+          </div>
+
+          <!-- FORMULARIO NOTA -->
+          <div class="qform" style="flex-direction:column;gap:5px;margin-top:8px">
+            <textarea class="qi" id="n-texto" placeholder="Escribe la nota o inserta resultado de calculadora arriba..." style="width:100%;height:80px;resize:vertical;"></textarea>
+            <div style="display:flex;gap:6px">
+              <input class="qi" id="n-autor" placeholder="Médico / Enfermera" style="flex:1">
+              <button class="qbtn" onclick="agregarNota('${id}')">+ Agregar nota</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /secciones -->
+  </div><!-- /ficha -->
+  `;
+}
+
+/* ══════════════════
+   ACCIONES
+   ══════════════════ */
+window.agregarVital = id=>{
+  const v={
+    presion: document.getElementById('v-presion').value.trim(),
+    fc:      document.getElementById('v-fc').value.trim(),
+    sato2:   document.getElementById('v-sato2').value.trim(),
+    temp:    document.getElementById('v-temp').value.trim(),
+    fr:      document.getElementById('v-fr').value.trim(),
+    glucosa: document.getElementById('v-glucosa').value.trim(),
+    hora:    hora(),
+    fechaHora: fechaHora()
+  };
+  if(!v.presion&&!v.fc&&!v.sato2&&!v.temp&&!v.fr&&!v.glucosa) return;
+  const arr=[...(pacientes[id].vitales||[]),v];
+  update(ref(db,`observacion/${id}`),{vitales:arr});
+};
+
+window.agregarMed = id=>{
+  const nombre=document.getElementById('m-nombre').value.trim();
+  if(!nombre) return;
+  const arr=[...(pacientes[id].medicamentos||[]),{
+    nombre,
+    dosis:document.getElementById('m-dosis').value.trim(),
+    via:document.getElementById('m-via').value.trim(),
+    hora:hora(), fechaHora:fechaHora()
+  }];
+  update(ref(db,`observacion/${id}`),{medicamentos:arr});
+};
+
+window.agregarEstudio = id=>{
+  const nombre=document.getElementById('e-nombre').value.trim();
+  if(!nombre) return;
+  const arr=[...(pacientes[id].estudios||[]),{nombre,estado:'Pendiente',hora:hora(),fechaHora:fechaHora()}];
+  update(ref(db,`observacion/${id}`),{estudios:arr});
+};
+
+window.agregarNota = id=>{
+  const texto=document.getElementById('n-texto').value.trim();
+  if(!texto) return;
+  const arr=[...(pacientes[id].notas||[]),{
+    texto,  // se guarda exactamente como se escribió
+    autor:document.getElementById('n-autor').value.trim()||'Personal médico',
+    hora:hora(),
+    fechaHora:fechaHora()
+  }];
+  update(ref(db,`observacion/${id}`),{notas:arr});
+  document.getElementById('n-texto').value='';
+};
+
+window.eliminarItem=(id,campo,idx)=>{
+  const arr=[...(pacientes[id][campo]||[])];
+  arr.splice(idx,1);
+  update(ref(db,`observacion/${id}`),{[campo]:arr});
+};
+
+window.marcarListo=(id,campo,idx)=>{
+  const arr=[...(pacientes[id][campo]||[])];
+  arr[idx]={...arr[idx],estado:'Listo',estadoHora:hora()};
+  update(ref(db,`observacion/${id}`),{[campo]:arr});
+};
+
+window.programarRev=(id,min)=>{
+  const fin=Date.now()+min*60*1000;
+  update(ref(db,`observacion/${id}`),{revFin:fin,revMin:min});
+};
+
+window.cancelarRev=id=>{
+  update(ref(db,`observacion/${id}`),{revFin:null,revMin:null});
+};
+
+
+
+/* ══════════════════════════════
+   IMPRESIÓN COMPLETA
+   ══════════════════════════════ */
+window.imprimirFicha = id=>{
+  const p=pacientes[id];
+  if(!p) return;
+  const meds=p.medicamentos||[];
+  const ests=p.estudios||[];
+  const vits=p.vitales||[];
+  const notas=p.notas||[];
+  const alertas=verificarAlertas(p);
+  const PNOMS={1:'P1 ROJO — CRÍTICO',2:'P2 NARANJA — EMERGENCIA',3:'P3 AMARILLO — URGENTE',4:'P4 VERDE — MENOR',5:'P5 AZUL — CONSULTA'};
+  const PCOLS={1:'#E63946',2:'#F4A261',3:'#E9C46A',4:'#2A9D8F',5:'#0694A2'};
+  const ahora=new Date().toLocaleString('es-MX');
+
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  <title>Expediente Observación — ${p.nombre}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:18px;max-width:800px;margin:0 auto;}
+    .hdr{display:flex;justify-content:space-between;border-bottom:3px solid #111;padding-bottom:10px;margin-bottom:14px;}
+    h1{font-size:17px;margin-bottom:2px;}
+    .sub{font-size:10px;color:#555;}
+    .prio{display:inline-block;background:${PCOLS[p.prioridad]};color:${p.prioridad===3?'#000':'#fff'};font-weight:700;font-size:12px;padding:4px 14px;border-radius:5px;margin-top:5px;}
+    .info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:#f5f5f5;padding:10px;border-radius:6px;margin-bottom:12px;}
+    .item label{font-size:9px;color:#666;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:1px;}
+    .item span{font-size:12px;font-weight:600;}
+    .alerta-box{background:#FEF2F2;border:1px solid #E63946;border-radius:6px;padding:8px 12px;margin-bottom:12px;}
+    .alerta-tit{font-size:10px;font-weight:700;color:#E63946;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;}
+    .alerta-chip{display:inline-block;background:#E63946;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin:2px;}
+    .seccion{border:1px solid #ddd;border-radius:6px;margin-bottom:10px;overflow:hidden;}
+    .sec-tit{background:#f0f0f0;padding:7px 12px;font-weight:700;font-size:10px;border-bottom:1px solid #ddd;text-transform:uppercase;letter-spacing:1px;}
+    table{width:100%;border-collapse:collapse;}
+    th{background:#f8f8f8;padding:6px 10px;text-align:left;font-size:9px;border-bottom:1px solid #ddd;color:#555;text-transform:uppercase;letter-spacing:1px;}
+    td{padding:6px 10px;border-bottom:1px solid #f0f0f0;font-size:11px;vertical-align:top;}
+    tr:last-child td{border-bottom:none;}
+    .badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;}
+    .badge-pend{background:#FEF3C7;color:#92400E;}
+    .badge-hecho{background:#D1FAE5;color:#065F46;}
+    .nota-row{padding:8px 12px;border-bottom:1px solid #f0f0f0;}
+    .nota-row:last-child{border-bottom:none;}
+    .nota-txt{font-size:11px;line-height:1.6;white-space:pre-wrap;}
+    .nota-meta{font-size:9px;color:#888;margin-top:3px;display:flex;justify-content:space-between;}
+    .firma-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:24px;padding-top:12px;border-top:1px solid #ddd;}
+    .firma-line{border-top:1px solid #999;margin-top:36px;padding-top:4px;font-size:9px;color:#666;text-align:center;}
+    .print-info{font-size:9px;color:#bbb;text-align:right;margin-top:10px;}
+    @media print{body{padding:10px;}}
+  </style><script src="triage-auth.js"><\/script>
+<link rel="stylesheet" href="triage-ssa.css">
+</head><body>
+
+  <div class="hdr">
+    <div>
+      <h1>✚ EXPEDIENTE DE OBSERVACIÓN</h1>
+      <p class="sub">Centro de Salud — Sistema de Triage</p>
+      <div class="prio">${PNOMS[p.prioridad]}</div>
+    </div>
+    <div style="text-align:right;font-size:10px;color:#555">
+      <div><strong>Folio:</strong> #${p.num}</div>
+      <div><strong>Ingreso urgencias:</strong> ${p.hora||'—'}</div>
+      <div><strong>Ingreso observación:</strong> ${p.horaIngreso||'—'}</div>
+      <div><strong>Impreso:</strong> ${ahora}</div>
+    </div>
+  </div>
+
+  <div class="info-grid">
+    <div class="item"><label>Paciente</label><span>${p.nombre}</span></div>
+    <div class="item"><label>Edad / Sexo</label><span>${p.edad||'?'} años · ${p.sexo||'—'}</span></div>
+    <div class="item"><label>Motivo</label><span>${p.motivo||'—'}</span></div>
+    <div class="item"><label>Cama asignada</label><span>${p.numeroCama||'Sin asignar'}</span></div>
+    <div class="item"><label>Acompañante</label><span>${p.acomp==='si'?'Sí':'No'}</span></div>
+  </div>
+
+  ${alertas.length>0?`
+  <div class="alerta-box">
+    <div class="alerta-tit">⚠ Alertas clínicas activas al momento de impresión</div>
+    ${alertas.map(a=>`<div class="alerta-chip">${a}</div>`).join('')}
+  </div>`:''}
+
+  <!-- VITALES -->
+  <div class="seccion">
+    <div class="sec-tit">💓 Signos Vitales — historial completo</div>
+    ${vits.length===0?'<div style="padding:8px 12px;color:#999;font-style:italic">Sin registros</div>':
+    `<table><thead><tr><th>Fecha/Hora</th><th>Presión</th><th>FC</th><th>SpO₂</th><th>Temp</th><th>FR</th><th>Glucosa</th></tr></thead><tbody>
+    ${vits.map(v=>`<tr>
+      <td style="font-family:monospace">${v.fechaHora||v.hora}</td>
+      <td>${v.presion||'—'}</td>
+      <td>${v.fc||'—'} lpm</td>
+      <td>${v.sato2||'—'}%</td>
+      <td>${v.temp||'—'}°C</td>
+      <td>${v.fr||'—'} rpm</td>
+      <td>${v.glucosa||'—'}</td>
+    </tr>`).join('')}
+    </tbody></table>`}
+  </div>
+
+  <!-- MEDICAMENTOS -->
+  <div class="seccion">
+    <div class="sec-tit">💊 Medicamentos Administrados</div>
+    ${meds.length===0?'<div style="padding:8px 12px;color:#999;font-style:italic">Sin registros</div>':
+    `<table><thead><tr><th>Fecha/Hora</th><th>Medicamento</th><th>Dosis</th><th>Vía</th></tr></thead><tbody>
+    ${meds.map(m=>`<tr>
+      <td style="font-family:monospace">${m.fechaHora||m.hora}</td>
+      <td>${m.nombre}</td><td>${m.dosis||'—'}</td><td>${m.via||'—'}</td>
+    </tr>`).join('')}
+    </tbody></table>`}
+  </div>
+
+  <!-- ESTUDIOS -->
+  <div class="seccion">
+    <div class="sec-tit">🔬 Estudios Solicitados</div>
+    ${ests.length===0?'<div style="padding:8px 12px;color:#999;font-style:italic">Sin estudios</div>':
+    `<table><thead><tr><th>Hora solicitud</th><th>Estudio</th><th>Estado</th><th>Hora resultado</th></tr></thead><tbody>
+    ${ests.map(e=>`<tr>
+      <td style="font-family:monospace">${e.fechaHora||e.hora}</td>
+      <td>${e.nombre}</td>
+      <td><span class="badge ${e.estado==='Listo'?'badge-hecho':'badge-pend'}">${e.estado||'Pendiente'}</span></td>
+      <td style="font-family:monospace">${e.estadoHora||'—'}</td>
+    </tr>`).join('')}
+    </tbody></table>`}
+  </div>
+
+  <!-- NOTAS — tal cual se escribieron -->
+  <div class="seccion">
+    <div class="sec-tit">📝 Notas de Evolución</div>
+    ${notas.length===0?'<div style="padding:8px 12px;color:#999;font-style:italic">Sin notas</div>':
+    notas.map(n=>`
+    <div class="nota-row">
+      <div class="nota-txt">${n.texto}</div>
+      <div class="nota-meta">
+        <strong>${n.autor||'Personal médico'}</strong>
+        <span>${n.fechaHora||n.hora}</span>
+      </div>
+    </div>`).join('')}
+  </div>
+
+  <div class="firma-grid">
+    <div><div class="firma-line">Firma del Médico Responsable</div></div>
+    <div><div class="firma-line">Firma de Enfermería</div></div>
+  </div>
+  <div class="print-info">Sistema de Triage · Folio #${p.num} · ${ahora}</div>
+
+  <script>setTimeout(()=>window.print(),600)<\/script>
+  </body></html>`);
+  w.document.close();
+};
+/* ══════════════════════════════
+   CALCULADORAS INTEGRADAS EN NOTAS
+   ══════════════════════════════ */
+window.showCalcTab = (tabId)=>{
+  // Extraer el tipo y el id del paciente
+  const parts = tabId.split('-');
+  const tipo  = parts[0];
+  const pacId = parts.slice(1).join('-');
+  const tipos = ['glasgow','qsofa','ic','imc'];
+  tipos.forEach(t=>{
+    const el=document.getElementById(`calc-${t}-${pacId}`);
+    if(el) el.style.display = t===tipo ? 'block' : 'none';
+  });
+};
+
+window.calcGlasgowObs = (id)=>{
+  const o=parseInt(document.getElementById(`cg-oc-${id}`)?.value)||0;
+  const v=parseInt(document.getElementById(`cg-ve-${id}`)?.value)||0;
+  const m=parseInt(document.getElementById(`cg-mo-${id}`)?.value)||0;
+  if(!o||!v||!m) return;
+  const total=o+v+m;
+  const interp=total>=13?'Normal':total>=9?'Moderado':'GRAVE — considerar intubación';
+  const el=document.getElementById(`cg-res-${id}`);
+  if(el) el.textContent=`Glasgow: ${total}/15 (O:${o} V:${v} M:${m}) — ${interp}`;
+};
+
+window.calcQSOFAObs = (id)=>{
+  const tas=document.getElementById(`cqs-tas-${id}`)?.checked?1:0;
+  const fr=document.getElementById(`cqs-fr-${id}`)?.checked?1:0;
+  const mental=document.getElementById(`cqs-mental-${id}`)?.checked?1:0;
+  const score=tas+fr+mental;
+  const interp=score===0?'Bajo riesgo':score===1?'Vigilancia':score>=2?'ALTO RIESGO SEPSIS — activar protocolo':'';
+  const el=document.getElementById(`cqs-res-${id}`);
+  if(el) el.textContent=`qSOFA: ${score}/3 — ${interp}`;
+};
+
+window.calcICObs = (id)=>{
+  const fc=parseFloat(document.getElementById(`cic-fc-${id}`)?.value);
+  const tas=parseFloat(document.getElementById(`cic-tas-${id}`)?.value);
+  if(isNaN(fc)||isNaN(tas)||tas===0) return;
+  const ic=(fc/tas).toFixed(2);
+  const interp=ic<0.6?'Normal':ic<0.9?'Levemente elevado':ic<1.3?'Choque leve-moderado':'CHOQUE GRAVE';
+  const el=document.getElementById(`cic-res-${id}`);
+  if(el) el.textContent=`Índice de choque: ${ic} (FC:${fc}/TAS:${tas}) — ${interp}`;
+};
+
+window.calcIMCObs = (id)=>{
+  const peso=parseFloat(document.getElementById(`cimc-peso-${id}`)?.value);
+  const talla=parseFloat(document.getElementById(`cimc-talla-${id}`)?.value)/100;
+  if(isNaN(peso)||isNaN(talla)||talla===0) return;
+  const imc=(peso/(talla*talla)).toFixed(1);
+  const interp=imc<18.5?'Bajo peso':imc<25?'Normal':imc<30?'Sobrepeso':imc<35?'Obesidad I':imc<40?'Obesidad II':'Obesidad III (mórbida)';
+  const el=document.getElementById(`cimc-res-${id}`);
+  if(el) el.textContent=`IMC: ${imc} — ${interp}`;
+};
+
+window.insertarCalc = (tipo, id)=>{
+  let texto='';
+  if(tipo==='glasgow'){
+    const res=document.getElementById(`cg-res-${id}`)?.textContent;
+    if(!res){alert('Completa la escala de Glasgow primero.');return;}
+    texto=res;
+  } else if(tipo==='qsofa'){
+    const res=document.getElementById(`cqs-res-${id}`)?.textContent;
+    if(!res){alert('Selecciona los criterios qSOFA primero.');return;}
+    texto=res;
+  } else if(tipo==='ic'){
+    const res=document.getElementById(`cic-res-${id}`)?.textContent;
+    if(!res){alert('Ingresa FC y TAS primero.');return;}
+    texto=res;
+  } else if(tipo==='imc'){
+    const res=document.getElementById(`cimc-res-${id}`)?.textContent;
+    if(!res){alert('Ingresa peso y talla primero.');return;}
+    texto=res;
+  }
+  const ta=document.getElementById('n-texto');
+  if(ta){
+    ta.value=(ta.value?ta.value+'\n':'')+texto;
+    ta.focus();
+  }
+};
+
+/* ── DAR DE ALTA CON CONFIRMACIÓN VISUAL COMPLETA ── */
+window.darAltaObs = id=>{
+  const pac=pacientes[id];
+  if(!pac) return;
+
+  // Modal de confirmación personalizado (reemplaza el confirm nativo)
+  const overlay=document.createElement('div');
+  overlay.style.cssText=`
+    position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;
+    display:flex;align-items:center;justify-content:center;
+    animation:fadein .2s ease;
+  `;
+
+  const tiempoObs = pac.ingresoObs
+    ? Math.round((Date.now()-pac.ingresoObs)/60000)
+    : null;
+  const tiempoStr = tiempoObs
+    ? (tiempoObs>=60 ? `${Math.floor(tiempoObs/60)}h ${tiempoObs%60}m` : `${tiempoObs}m`)
+    : '—';
+
+  overlay.innerHTML=`
+    <div style="background:var(--panel);border-radius:14px;padding:28px 24px;width:340px;
+                box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center;">
+      <!-- Ícono -->
+      <div style="width:60px;height:60px;background:var(--verde-lt);border-radius:50%;
+                  display:flex;align-items:center;justify-content:center;
+                  margin:0 auto 16px;font-size:28px;">🏥</div>
+
+      <!-- Título -->
+      <div style="font-size:16px;font-weight:800;color:var(--txt);margin-bottom:4px;">
+        Confirmar Alta
+      </div>
+      <div style="font-size:12px;color:var(--mute);margin-bottom:20px;">
+        Esta acción moverá al paciente al historial
+      </div>
+
+      <!-- Tarjeta paciente -->
+      <div style="background:var(--panel2);border:1px solid var(--brd);border-radius:10px;
+                  padding:14px;margin-bottom:20px;text-align:left;">
+        <div style="font-size:15px;font-weight:700;color:var(--txt);margin-bottom:6px;">
+          ${pac.nombre}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;">
+          <div style="color:var(--mute);">Folio</div>
+          <div style="font-weight:700;font-family:var(--mono);">#${pac.num}</div>
+          ${pac.numeroCama?`
+          <div style="color:var(--mute);">Cama</div>
+          <div style="font-weight:700;font-family:var(--mono);color:var(--T);">🛏 ${pac.numeroCama}</div>`:''}
+          <div style="color:var(--mute);">Prioridad</div>
+          <div style="font-weight:700;">P${pac.prioridad}</div>
+          <div style="color:var(--mute);">Tiempo en obs.</div>
+          <div style="font-weight:700;font-family:var(--mono);">${tiempoStr}</div>
+        </div>
+      </div>
+
+      <!-- Tipo de alta -->
+      <div style="text-align:left;margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:600;color:var(--mute);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">
+          Tipo de egreso
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          ${['Alta voluntaria','Alta médica','Referencia','Defunción'].map(t=>
+            `<label style="display:flex;align-items:center;gap:6px;padding:8px;background:var(--panel);
+                           border:1px solid var(--brd);border-radius:6px;cursor:pointer;font-size:11px;">
+               <input type="radio" name="tipo-alta" value="${t}" ${t==='Alta médica'?'checked':''}
+                 style="accent-color:var(--verde);">
+               ${t}
+             </label>`
+          ).join('')}
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button id="btn-cancelar-alta"
+          style="padding:11px;background:var(--panel2);border:1px solid var(--brd);
+                 border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:var(--txt);">
+          Cancelar
+        </button>
+        <button id="btn-confirmar-alta"
+          style="padding:11px;background:var(--verde);border:none;color:#fff;
+                 border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">
+          ✓ Dar de alta
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Cerrar con cancelar o click fuera
+  overlay.querySelector('#btn-cancelar-alta').onclick = ()=>overlay.remove();
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+
+  // Confirmar alta
+  overlay.querySelector('#btn-confirmar-alta').onclick = ()=>{
+    const tipoAlta = overlay.querySelector('input[name="tipo-alta"]:checked')?.value || 'Alta médica';
+    const nombre = pac.nombre;
+    const cama   = pac.numeroCama || '—';
+
+    overlay.remove();
+
+    push(ref(db,'historial'),{
+      ...pac,
+      horaAlta: hora(),
+      fechaAlta: new Date().toLocaleDateString('es-MX'),
+      timestampAlta: Date.now(),
+      tiempoObservacion: tiempoObs,
+      estadoFinal: tipoAlta
+    }).then(()=>{
+      remove(ref(db,`observacion/${id}`));
+
+      // ── PANTALLA DE ÉXITO ──
+      mostrarConfirmacionAlta(nombre, cama, tipoAlta, tiempoStr);
+
+    }).catch(e=>{
+      console.error(e);
+      alert('Error al registrar el alta. Intenta de nuevo.');
+    });
+
+    selId=null;
+  };
+};
+
+function mostrarConfirmacionAlta(nombre, cama, tipo, tiempo){
+  // Limpiar panel derecho con animación de éxito
+  const content = document.getElementById('content');
+  content.innerHTML=`
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                height:100%;gap:16px;padding:40px;text-align:center;animation:pop .4s ease;">
+
+      <!-- Check animado -->
+      <div style="width:80px;height:80px;background:var(--verde-lt);border:3px solid var(--verde);
+                  border-radius:50%;display:flex;align-items:center;justify-content:center;
+                  font-size:36px;animation:pop .5s ease;">✓</div>
+
+      <div style="font-size:20px;font-weight:800;color:var(--verde);">Alta registrada</div>
+
+      <!-- Resumen -->
+      <div style="background:var(--panel2);border:1px solid var(--brd);border-radius:12px;
+                  padding:16px 20px;width:100%;max-width:320px;text-align:left;">
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:10px;">${nombre}</div>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12px;">
+          <span style="color:var(--mute);">Tipo de egreso</span>
+          <span style="font-weight:700;color:var(--verde);">${tipo}</span>
+          ${cama!=='—'?`<span style="color:var(--mute);">Cama liberada</span>
+          <span style="font-weight:700;font-family:var(--mono);color:var(--T);">🛏 ${cama}</span>`:''}
+          <span style="color:var(--mute);">Tiempo en obs.</span>
+          <span style="font-weight:700;font-family:var(--mono);">${tiempo}</span>
+          <span style="color:var(--mute);">Hora de alta</span>
+          <span style="font-weight:700;font-family:var(--mono);">${new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false})}</span>
+        </div>
+      </div>
+
+      <div style="font-size:12px;color:var(--mute);">Selecciona el siguiente paciente</div>
+    </div>
+  `;
+
+  // Toast en esquina inferior
+  const toast=document.createElement('div');
+  toast.innerHTML=`✓ Alta registrada · ${nombre.split(' ')[0]}`;
+  toast.style.cssText=`
+    position:fixed;bottom:24px;right:24px;
+    background:var(--verde);color:#fff;
+    font-family:var(--mono);font-size:12px;font-weight:700;
+    letter-spacing:.5px;padding:12px 20px;border-radius:8px;
+    z-index:200;opacity:0;transform:translateY(8px);
+    transition:all .3s;pointer-events:none;
+    box-shadow:0 4px 20px rgba(27,77,53,.4);
+  `;
+  document.body.appendChild(toast);
+  setTimeout(()=>{ toast.style.opacity='1'; toast.style.transform='translateY(0)'; },10);
+  setTimeout(()=>{ toast.style.opacity='0'; toast.style.transform='translateY(8px)'; },3000);
+  setTimeout(()=>toast.remove(),3400);
+}
+
+</script>
+</body>
+</html>
