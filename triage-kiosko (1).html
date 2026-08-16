@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Registro de Paciente — Triage</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Superficies */
+  --bg:#0A0E1A;--panel:#111827;--panel2:#0D1520;--brd:#1E2D3D;--brd2:#243447;
+  --white:#111827;--shadow:0 10px 40px rgba(0,0,0,.45);
+  /* Texto */
+  --txt:#E8F4FD;--text:#E8F4FD;--txt2:#B8C9D9;
+  --mute:#6B7C93;--gray:#6B7C93;--mute2:#4A5568;--gray-dk:#B8C9D9;--gray-lt:#1E2D3D;
+  /* Acento principal (turquesa) — reemplaza al guinda/dorado institucional */
+  --T:#0694A2;--teal:#0694A2;--T-dk:#057885;--T-lt:rgba(6,148,162,.14);
+  /* Estados clínicos */
+  --R:#DC2626;--red:#DC2626;--red-lt:rgba(220,38,38,.15);--red-dk:#F87171;
+  --O:#EA580C;--orange:#EA580C;
+  --Y:#CA8A04;--yellow:#CA8A04;
+  --G:#16A34A;--verde:#16A34A;--verde-dk:#15803D;--verde-lt:rgba(22,163,74,.15);
+  --B:#1D4ED8;--P:#7C3AED;
+  /* Tipografía */
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans','Outfit',sans-serif;--font:var(--sans);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:var(--font);background:var(--bg);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px 40px;}
+
+/* HEADER */
+.hdr{width:100%;max-width:700px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.hdr-logo{display:flex;align-items:center;gap:12px;}
+.hdr-cruz{width:42px;height:42px;background:var(--T);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;box-shadow:0 4px 14px rgba(6,148,162,.35);}
+.hdr-title{font-size:18px;font-weight:700;color:var(--text);}
+.hdr-sub{font-size:12px;color:var(--gray);}
+#reloj{font-size:20px;font-weight:600;color:var(--T);}
+
+/* CARD */
+.card{background:var(--white);border-radius:26px;box-shadow:var(--shadow);width:100%;max-width:700px;overflow:hidden;}
+
+/* PROGRESS */
+.prog-wrap{padding:22px 28px 18px;border-bottom:1px solid var(--gray-lt);}
+.prog-steps{display:flex;align-items:center;}
+.step-item{display:flex;align-items:center;gap:8px;flex:1;}
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;background:var(--gray-lt);color:var(--gray);transition:all .3s;}
+.step-dot.on{background:var(--T);color:#fff;}
+.step-dot.done{background:var(--verde);color:#fff;}
+.step-lbl{font-size:11px;font-weight:500;color:var(--gray);transition:color .3s;white-space:nowrap;}
+.step-lbl.on{color:var(--T);font-weight:700;}
+.step-lbl.done{color:var(--verde);}
+.step-line{flex:1;height:2px;background:var(--gray-lt);border-radius:2px;transition:background .3s;}
+.step-line.done{background:var(--verde);}
+
+/* SECTIONS */
+.sec{display:none;padding:28px;animation:fadeUp .3s ease;}
+.sec.on{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.sec-title{font-size:24px;font-weight:800;color:var(--text);margin-bottom:5px;line-height:1.2;}
+.sec-sub{font-size:14px;color:var(--gray);margin-bottom:24px;}
+
+/* FIELDS */
+.field{margin-bottom:18px;}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:7px;}
+.field input,.field select,.field textarea{width:100%;padding:15px 16px;border:2px solid var(--gray-lt);border-radius:14px;font-family:var(--font);font-size:16px;color:#111827!important;background:#fff!important;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--T);box-shadow:0 0 0 4px rgba(123,20,40,.09);background:#fff!important;color:#111827!important;}
+.field textarea{resize:none;height:100px;line-height:1.5;}
+.field input::placeholder,.field textarea::placeholder{color:#9CA3AF!important;}
+.vital-input{width:100%;padding:15px 16px;border:2px solid var(--gray-lt);border-radius:14px;font-family:var(--font);font-size:16px;font-weight:600;color:#111827!important;background:#fff!important;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;text-align:center;}
+.vital-input:focus{border-color:var(--teal);box-shadow:0 0 0 4px rgba(6,148,162,.12);}
+.vital-input::placeholder{color:#9CA3AF!important;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.edad-calc{font-size:12px;color:var(--teal);margin-top:5px;font-weight:600;display:none;}
+
+/* TIPO VISITA */
+.tipo-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:10px;}
+.tipo-btn{padding:20px 16px;border-radius:18px;border:2px solid var(--gray-lt);background:var(--bg);font-family:var(--font);font-size:15px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s;color:var(--gray-dk);}
+.tipo-btn .tipo-ico{font-size:34px;display:block;margin-bottom:10px;}
+.tipo-btn .tipo-sub{font-size:12px;font-weight:400;color:var(--gray);display:block;margin-top:3px;}
+.tipo-btn:hover{transform:scale(1.02);border-color:var(--T);}
+.tipo-btn.sel-nuevo{border-color:var(--T);background:var(--T-lt);color:var(--T);}
+.tipo-btn.sel-seg{border-color:var(--teal);background:#F0FDFE;color:var(--teal);}
+
+/* BANDERAS DE ALARMA */
+.banderas-box{display:none;background:var(--red-lt);border:2px solid var(--red);border-radius:16px;padding:16px 18px;margin-bottom:16px;animation:fadeUp .3s ease;}
+.banderas-box.visible{display:block;}
+.banderas-tit{font-size:13px;font-weight:800;color:var(--red);margin-bottom:10px;display:flex;align-items:center;gap:8px;letter-spacing:.5px;}
+.banderas-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.bandera-chip{background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;display:flex;align-items:center;gap:5px;}
+
+/* ALARMAS DENTALES — Rojo / Amarillo / Verde */
+.alarma-tit{font-size:13px;font-weight:800;margin:16px 0 8px;display:flex;align-items:center;gap:6px;letter-spacing:.3px;}
+.alarma-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;}
+.alarma-chip{padding:11px 12px;border-radius:12px;border:2px solid var(--gray-lt);background:var(--bg);font-size:12.5px;font-weight:500;cursor:pointer;text-align:left;transition:all .15s;color:var(--text);font-family:var(--font);line-height:1.35;}
+.alarma-chip.rojo:hover,.alarma-chip.rojo.sel{border-color:var(--red);background:var(--red-lt);color:var(--red-dk);font-weight:700;}
+.alarma-chip.amarillo:hover,.alarma-chip.amarillo.sel{border-color:var(--yellow);background:rgba(202,138,4,.15);color:var(--yellow);font-weight:700;}
+.alarma-chip.verde:hover,.alarma-chip.verde.sel{border-color:var(--verde);background:var(--verde-lt);color:var(--verde);font-weight:700;}
+@media (max-width:480px){.alarma-grid{grid-template-columns:1fr;}}
+
+/* SÍNTOMAS */
+.sint-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
+.sint-chip{padding:13px 14px;border-radius:13px;border:2px solid var(--gray-lt);background:var(--bg);font-size:13px;font-weight:500;cursor:pointer;text-align:left;transition:all .15s;color:var(--text);font-family:var(--font);display:flex;align-items:center;gap:9px;}
+.sint-chip .chip-ico{font-size:19px;flex-shrink:0;}
+.sint-chip:hover{border-color:var(--T);background:var(--T-lt);}
+.sint-chip.sel{border-color:var(--T);background:var(--T-lt);color:var(--T);font-weight:700;}
+.sint-chip.grave{border-color:rgba(224,36,36,.2);}
+.sint-chip.grave:hover,.sint-chip.grave.sel{border-color:var(--red);background:var(--red-lt);color:var(--red);}
+.otro-area{display:none;}
+.otro-area.vis{display:block;}
+.sint-resumen{display:none;background:var(--T-lt);border-radius:12px;padding:10px 14px;margin-bottom:10px;}
+.sint-resumen-tit{font-size:11px;font-weight:700;color:var(--T);margin-bottom:6px;letter-spacing:1px;}
+.sint-tags{display:flex;flex-wrap:wrap;gap:5px;}
+.sint-tag{background:var(--T);color:#fff;font-size:11px;padding:3px 10px;border-radius:20px;}
+.sint-tag.grave-tag{background:var(--red);}
+
+/* DOLOR */
+.dolor-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;}
+.dolor-btn{aspect-ratio:1;border-radius:9px;border:2px solid var(--gray-lt);background:var(--bg);font-size:14px;font-weight:700;font-family:var(--font);cursor:pointer;transition:all .15s;color:var(--gray);}
+.dolor-btn:hover{transform:scale(1.07);}
+.dolor-btn.d-leve{background:#D1FAE5;border-color:#059669;color:#065F46;}
+.dolor-btn.d-mod{background:#FEF3C7;border-color:#D97706;color:#92400E;}
+.dolor-btn.d-sev{background:#FEE2E2;border-color:#DC2626;color:#991B1B;}
+.dolor-btn.d-ext{background:#7F1D1D;border-color:#991B1B;color:#fff;}
+.dolor-ley{display:flex;justify-content:space-between;font-size:11px;color:var(--gray);margin-top:5px;padding:0 2px;}
+
+/* ACOMPAÑANTE */
+.bool-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.bool-btn{padding:20px 14px;border-radius:16px;border:2px solid var(--gray-lt);background:var(--bg);font-size:16px;font-weight:700;cursor:pointer;text-align:center;font-family:var(--font);color:var(--gray);transition:all .15s;}
+.bool-btn .bico{font-size:30px;display:block;margin-bottom:8px;}
+.bool-btn.b-si{border-color:var(--verde);background:var(--verde-lt);color:var(--verde);}
+.bool-btn.b-no{border-color:#6B7280;background:#F9FAFB;color:#374151;}
+
+/* NAVEGACIÓN */
+.nav{display:flex;gap:12px;margin-top:26px;}
+.btn-back{padding:15px 26px;border-radius:13px;border:2px solid var(--gray-lt);background:transparent;font-family:var(--font);font-size:15px;font-weight:600;color:var(--gray);cursor:pointer;transition:all .2s;}
+.btn-back:hover{background:var(--gray-lt);}
+.btn-next{flex:1;padding:17px;border-radius:13px;border:none;background:var(--T);font-family:var(--font);font-size:16px;font-weight:700;color:#fff;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(123,20,40,.3);}
+.btn-next:hover{background:var(--T-dk);transform:translateY(-1px);}
+.btn-next:disabled{background:var(--gray-lt);color:var(--gray);box-shadow:none;cursor:not-allowed;transform:none;}
+
+/* ANALYZING */
+.analyzing{display:none;flex-direction:column;align-items:center;justify-content:center;padding:56px 28px;text-align:center;gap:18px;}
+.analyzing.on{display:flex;}
+.spinner{width:60px;height:60px;border:5px solid var(--gray-lt);border-top-color:var(--T);border-radius:50%;animation:spin .75s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.anal-title{font-size:20px;font-weight:700;color:var(--text);}
+.anal-sub{font-size:13px;color:var(--gray);line-height:1.6;}
+
+/* RESULTADO */
+.resultado{display:none;padding:28px;animation:fadeUp .4s ease;}
+.resultado.on{display:block;}
+.res-card{border-radius:18px;padding:22px 20px;display:flex;align-items:center;gap:18px;margin-bottom:18px;}
+.res-ico{font-size:46px;flex-shrink:0;}
+.res-prio-lbl{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
+.res-pac-name{font-size:21px;font-weight:800;color:var(--text);margin-bottom:3px;}
+.res-nivel{font-size:14px;font-weight:600;}
+.res-destino{border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.res-dest-ico{font-size:26px;}
+.res-dest-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
+.res-dest-val{font-size:17px;font-weight:800;color:var(--text);}
+.res-wait{background:var(--bg);border-radius:14px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.res-wait-lbl{font-size:11px;color:var(--gray);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.res-wait-val{font-size:24px;font-weight:900;color:var(--text);}
+/* Banderas en resultado */
+.res-banderas{background:var(--red-lt);border:2px solid var(--red);border-radius:12px;padding:14px 16px;margin-bottom:14px;}
+.res-banderas-tit{font-size:12px;font-weight:800;color:var(--red);margin-bottom:8px;}
+.res-banderas-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.res-bandera{background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;}
+.res-msg{border-radius:12px;padding:14px 16px;font-size:13px;line-height:1.6;margin-bottom:22px;background:#FFFBEB;border:1px solid #FCD34D;color:#92400E;}
+.res-msg.azul{background:#EFF6FF;border-color:#BFDBFE;color:#1E40AF;}
+.btn-nuevo{width:100%;padding:16px;border-radius:13px;border:2px solid var(--gray-lt);background:transparent;font-family:var(--font);font-size:15px;font-weight:600;color:var(--gray);cursor:pointer;transition:all .2s;}
+.btn-nuevo:hover{background:var(--gray-lt);}
+
+/* THEMES */
+.theme-p1 .res-card{background:#FEF2F2;}
+.theme-p1 .res-prio-lbl,.theme-p1 .res-nivel{color:var(--red);}
+.theme-p1 .res-destino{background:#FEE2E2;}
+.theme-p1 .res-dest-lbl{color:var(--red);}
+.theme-p2 .res-card{background:#FFF7ED;}
+.theme-p2 .res-prio-lbl,.theme-p2 .res-nivel{color:var(--orange);}
+.theme-p2 .res-destino{background:#FEF3C7;}
+.theme-p2 .res-dest-lbl{color:var(--orange);}
+.theme-p3 .res-card{background:#FFFBEB;}
+.theme-p3 .res-prio-lbl,.theme-p3 .res-nivel{color:var(--yellow);}
+.theme-p3 .res-destino{background:#FEF9C3;}
+.theme-p3 .res-dest-lbl{color:var(--yellow);}
+.theme-p4 .res-card{background:#F0FDF4;}
+.theme-p4 .res-prio-lbl,.theme-p4 .res-nivel{color:var(--verde);}
+.theme-p4 .res-destino{background:#DCFCE7;}
+.theme-p4 .res-dest-lbl{color:var(--verde);}
+.theme-p5 .res-card{background:#EFF6FF;}
+.theme-p5 .res-prio-lbl,.theme-p5 .res-nivel{color:var(--teal);}
+.theme-p5 .res-destino{background:#DBEAFE;}
+.theme-p5 .res-dest-lbl{color:var(--teal);}
+
+
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">
+    <div class="hdr-cruz">✚</div>
+    <div>
+      <div class="hdr-title">Registro de Paciente</div>
+      <div class="hdr-sub">Triage Automatizado</div>
+    </div>
+  </div>
+  <div id="reloj">--:--</div>
+</div>
+
+<div class="card">
+
+  <!-- PROGRESO -->
+  <div class="prog-wrap">
+    <div class="prog-steps">
+      <div class="step-item"><div class="step-dot on" id="sd1">1</div><div class="step-lbl on" id="sl1">Visita</div></div>
+      <div class="step-line" id="sln12"></div>
+      <div class="step-item"><div class="step-dot" id="sd2">2</div><div class="step-lbl" id="sl2">Datos</div></div>
+      <div class="step-line" id="sln23"></div>
+      <div class="step-item"><div class="step-dot" id="sd3">3</div><div class="step-lbl" id="sl3">Síntomas</div></div>
+      <div class="step-line" id="sln34"></div>
+      <div class="step-item"><div class="step-dot" id="sd4">4</div><div class="step-lbl" id="sl4">Dolor</div></div>
+      <div class="step-line" id="sln45"></div>
+      <div class="step-item"><div class="step-dot" id="sd5">5</div><div class="step-lbl" id="sl5">Vitales</div></div>
+    </div>
+  </div>
+
+  <!-- PASO 1: TIPO DE VISITA -->
+  <div class="sec on" id="sec1">
+    <div class="sec-title">¡Bienvenido! 👋</div>
+    <div class="sec-sub">Selecciona el tipo de visita para comenzar.</div>
+    <div class="tipo-grid">
+      <button class="tipo-btn" id="btn-nuevo-visit" onclick="selTipo('nuevo')">
+        <span class="tipo-ico">🩺</span>Consulta nueva
+        <span class="tipo-sub">Primera vez o síntoma nuevo</span>
+      </button>
+      <button class="tipo-btn" id="btn-seg-visit" onclick="selTipo('seguimiento')">
+        <span class="tipo-ico">📋</span>Seguimiento
+        <span class="tipo-sub">Continúo un tratamiento previo</span>
+      </button>
+    </div>
+    <div class="nav">
+      <button class="btn-next" id="btn-sig1" onclick="irPaso(2)" disabled>Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- PASO 2: DATOS -->
+  <div class="sec" id="sec2">
+    <div class="sec-title">Tus datos personales 👤</div>
+    <div class="sec-sub">Escribe tu información para registrarte.</div>
+    <div class="field">
+      <label>Nombre completo</label>
+      <input type="text" id="k-nombre" placeholder="Apellidos, Nombre" autocomplete="name">
+    </div>
+    <div class="field">
+      <label>Fecha de nacimiento</label>
+      <input type="date" id="k-fechanac" onchange="calcularEdad()">
+      <div class="edad-calc" id="edad-calc-lbl"></div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Edad (años)</label>
+        <input type="number" id="k-edad" placeholder="O se calcula sola" min="0" max="120">
+      </div>
+      <div class="field">
+        <label>Sexo</label>
+        <select id="k-sexo">
+          <option value="">Seleccionar</option>
+          <option>Masculino</option>
+          <option>Femenino</option>
+          <option>Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" id="campo-doctor" style="display:none">
+      <label>Doctor / área que te atiende</label>
+      <input type="text" id="k-doctor" placeholder="Ej: Dr. García — Cardiología">
+    </div>
+    <div class="nav">
+      <button class="btn-back" onclick="irPaso(1)">← Atrás</button>
+      <button class="btn-next" onclick="irPaso(3)">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- PASO 3: ANTECEDENTES + PROCEDIMIENTO -->
+  <div class="sec" id="sec3">
+    <div class="sec-title" id="sint-title">Antecedentes médicos 📋</div>
+    <div class="sec-sub" id="sint-sub">Selecciona si vives con alguna enfermedad crónica.</div>
+
+    <div class="sint-grid">
+      <button class="sint-chip" onclick="toggleCron(this,'Diabetes tipo 2')"><span class="chip-ico">🩸</span>Diabetes tipo 2</button>
+      <button class="sint-chip" onclick="toggleCron(this,'Diabetes tipo 1')"><span class="chip-ico">🩸</span>Diabetes tipo 1</button>
+      <button class="sint-chip" onclick="toggleCron(this,'Hipertensión arterial')"><span class="chip-ico">❤️</span>Hipertensión</button>
+      <button class="sint-chip" onclick="toggleCron(this,'Asma')"><span class="chip-ico">🫁</span>Asma</button>
+      <button class="sint-chip" onclick="toggleCron(this,'EPOC')"><span class="chip-ico">🫁</span>EPOC</button>
+      <button class="sint-chip" onclick="toggleCron(this,'Enfermedad renal crónica')"><span class="chip-ico">🫘</span>Enf. renal crónica</button>
+      <button class="sint-chip" onclick="toggleCron(this,'Cardiopatía')"><span class="chip-ico">💓</span>Cardiopatía</button>
+      <button class="sint-chip" onclick="toggleCron(this,'Hipotiroidismo')"><span class="chip-ico">🦋</span>Hipotiroidismo</button>
+      <button class="sint-chip" onclick="toggleCron(this,'Obesidad')"><span class="chip-ico">⚖️</span>Obesidad</button>
+      <button class="sint-chip" onclick="toggleCron(this,'Artritis / Artrosis')"><span class="chip-ico">🦴</span>Artritis / Artrosis</button>
+      <button class="sint-chip" onclick="toggleCron(this,'Epilepsia')"><span class="chip-ico">🧠</span>Epilepsia</button>
+      <button class="sint-chip" onclick="toggleCron(this,'Otra')" id="chip-cron-otra"><span class="chip-ico">✏️</span>Otra</button>
+      <button class="sint-chip" onclick="toggleCron(this,'Ninguna')" id="chip-cron-ninguna"><span class="chip-ico">✅</span>Ninguna</button>
+    </div>
+
+    <div class="otro-area" id="cron-otra-area">
+      <div class="field">
+        <label>¿Cuál otra enfermedad crónica?</label>
+        <input type="text" id="k-cron-otra" placeholder="Ej: Lupus, VIH, etc.">
+      </div>
+    </div>
+
+    <!-- MEDICAMENTOS POR CADA CRÓNICA SELECCIONADA -->
+    <div id="cron-meds-wrap"></div>
+
+    <!-- PROCEDIMIENTO A REALIZAR -->
+    <div class="field" style="margin-top:10px">
+      <label style="font-size:15px;font-weight:700;">¿Qué procedimiento te van a realizar hoy?</label>
+    </div>
+    <div class="sint-grid">
+      <button class="sint-chip" onclick="selProc(this,'Consulta general')"><span class="chip-ico">🩺</span>Consulta general</button>
+      <button class="sint-chip" onclick="selProc(this,'Curación / cambio de gasas')"><span class="chip-ico">🩹</span>Curación</button>
+      <button class="sint-chip" onclick="selProc(this,'Aplicación de medicamento (inyección)')"><span class="chip-ico">💉</span>Aplicación de medicamento</button>
+      <button class="sint-chip" onclick="selProc(this,'Toma de muestra (laboratorio)')"><span class="chip-ico">🧪</span>Toma de muestra</button>
+      <button class="sint-chip" onclick="selProc(this,'Retiro de puntos')"><span class="chip-ico">✂️</span>Retiro de puntos</button>
+      <button class="sint-chip" onclick="selProc(this,'Vacunación')"><span class="chip-ico">💉</span>Vacunación</button>
+      <button class="sint-chip" onclick="selProc(this,'Nebulización')"><span class="chip-ico">🫁</span>Nebulización</button>
+      <button class="sint-chip" onclick="selProc(this,'Sutura')"><span class="chip-ico">🪡</span>Sutura</button>
+      <button class="sint-chip" onclick="selProc(this,'Colocación de sonda / catéter')"><span class="chip-ico">🏥</span>Sonda / catéter</button>
+      <button class="sint-chip" onclick="selProc(this,'Otro')" id="chip-proc-otro"><span class="chip-ico">✏️</span>Otro</button>
+    </div>
+
+    <div class="otro-area" id="proc-otro-area">
+      <div class="field">
+        <label>Describe el procedimiento</label>
+        <input type="text" id="k-proc-otro" placeholder="Ej: Curetaje, aplicación de nitrógeno...">
+      </div>
+    </div>
+
+    <!-- ALARMAS DENTALES -->
+    <div class="field" style="margin-top:18px">
+      <label style="font-size:15px;font-weight:700;">¿Presentas alguna de estas situaciones? (opcional)</label>
+      <div class="sec-sub" style="margin-top:2px;margin-bottom:4px;">Selecciona todo lo que aplique — nos ayuda a darte la prioridad correcta.</div>
+    </div>
+
+    <div class="alarma-tit" style="color:var(--red)">🔴 Urgencia inmediata</div>
+    <div class="alarma-grid">
+      <button class="alarma-chip rojo" onclick="toggleAlarma(this,'rojo','Dolor dental intenso que no cede con analgésicos')">Dolor dental intenso que no cede con analgésicos</button>
+      <button class="alarma-chip rojo" onclick="toggleAlarma(this,'rojo','Absceso con signos de infección grave (fiebre, hinchazón hacia el cuello/mandíbula)')">Absceso con fiebre / hinchazón que se extiende al cuello</button>
+      <button class="alarma-chip rojo" onclick="toggleAlarma(this,'rojo','Trauma dental con hemorragia activa que no se controla')">Trauma dental con hemorragia activa sin control</button>
+      <button class="alarma-chip rojo" onclick="toggleAlarma(this,'rojo','Fractura dental con exposición pulpar y dolor intenso')">Fractura dental con exposición pulpar y dolor intenso</button>
+      <button class="alarma-chip rojo" onclick="toggleAlarma(this,'rojo','Celulitis facial o angioneurótica')">Hinchazón facial importante (celulitis)</button>
+      <button class="alarma-chip rojo" onclick="toggleAlarma(this,'rojo','Hemorragia post-extracción que no cede con compresión')">Sangrado tras extracción que no cede con compresión</button>
+      <button class="alarma-chip rojo" onclick="toggleAlarma(this,'rojo','Paciente inmunocomprometido con infección odontógena')">Soy inmunocomprometido y tengo una infección dental</button>
+    </div>
+
+    <div class="alarma-tit" style="color:var(--yellow)">🟡 Urgente — mismo día</div>
+    <div class="alarma-grid">
+      <button class="alarma-chip amarillo" onclick="toggleAlarma(this,'amarillo','Dolor dental moderado-severo que limita comer o dormir')">Dolor moderado-severo, no me deja comer o dormir</button>
+      <button class="alarma-chip amarillo" onclick="toggleAlarma(this,'amarillo','Absceso localizado sin signos sistémicos')">Absceso localizado, sin fiebre ni malestar general</button>
+      <button class="alarma-chip amarillo" onclick="toggleAlarma(this,'amarillo','Pulpitis irreversible: dolor al frío/calor que dura varios minutos')">Dolor al frío/calor que dura varios minutos</button>
+      <button class="alarma-chip amarillo" onclick="toggleAlarma(this,'amarillo','Trauma dental reciente sin hemorragia activa (luxación o avulsión)')">Golpe reciente en un diente (sin sangrado activo)</button>
+      <button class="alarma-chip amarillo" onclick="toggleAlarma(this,'amarillo','Fractura de corona con exposición pulpar, dolor controlable')">Diente fracturado, dolor controlable</button>
+      <button class="alarma-chip amarillo" onclick="toggleAlarma(this,'amarillo','Pericoronaritis (inflamación de muela del juicio) con dolor e inflamación local')">Inflamación de muela del juicio con dolor</button>
+      <button class="alarma-chip amarillo" onclick="toggleAlarma(this,'amarillo','Movilidad dental marcada por trauma o infección')">Un diente se siente muy flojo</button>
+      <button class="alarma-chip amarillo" onclick="toggleAlarma(this,'amarillo','Hemorragia post-extracción leve-moderada, controlada con compresión')">Sangrado leve tras extracción, se controla con presión</button>
+    </div>
+
+    <div class="alarma-tit" style="color:var(--verde)">🟢 No urgente / programable</div>
+    <div class="alarma-grid">
+      <button class="alarma-chip verde" onclick="toggleAlarma(this,'verde','Caries sin dolor o con sensibilidad leve')">Caries sin dolor o con sensibilidad leve</button>
+      <button class="alarma-chip verde" onclick="toggleAlarma(this,'verde','Necesidad de limpieza (sarro, pigmentaciones)')">Necesito una limpieza (sarro, manchas)</button>
+      <button class="alarma-chip verde" onclick="toggleAlarma(this,'verde','Periodontitis crónica sin agudización')">Encías con problema crónico, sin dolor fuerte</button>
+      <button class="alarma-chip verde" onclick="toggleAlarma(this,'verde','Pieza indicada para extracción pero asintomática')">Tengo que sacarme un diente pero no me duele</button>
+      <button class="alarma-chip verde" onclick="toggleAlarma(this,'verde','Solicita sellantes o aplicación de flúor')">Quiero sellantes o aplicación de flúor</button>
+      <button class="alarma-chip verde" onclick="toggleAlarma(this,'verde','Interesado en prótesis, coronas o tratamiento estético')">Prótesis, coronas o tratamiento estético</button>
+      <button class="alarma-chip verde" onclick="toggleAlarma(this,'verde','Control de rutina')">Vengo a un control de rutina</button>
+      <button class="alarma-chip verde" onclick="toggleAlarma(this,'verde','Dolor leve e intermitente que cede con analgésicos')">Dolor leve, va y viene, cede con analgésicos</button>
+    </div>
+
+    <div class="nav">
+      <button class="btn-back" onclick="irPaso(2)">← Atrás</button>
+      <button class="btn-next" id="btn-sig3" onclick="irPaso(4)" disabled>Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- PASO 4: DOLOR + ACOMPAÑANTE -->
+  <div class="sec" id="sec4">
+    <div class="sec-title">Nivel de dolor 😣</div>
+    <div class="sec-sub">Del 1 al 10, ¿qué tan fuerte es el dolor que sientes ahora?</div>
+    <div class="dolor-grid" id="dolor-grid"></div>
+    <div class="dolor-ley"><span>Sin dolor</span><span>Dolor máximo</span></div>
+    <div style="margin-top:28px">
+      <div class="sec-title" style="font-size:20px">¿Vienes acompañado? 👥</div>
+      <div class="sec-sub" style="margin-top:5px">¿Hay alguien contigo ahora?</div>
+      <div class="bool-grid">
+        <button class="bool-btn" id="btn-si" onclick="selAcomp('si')"><span class="bico">🙋</span>Sí, con acompañante</button>
+        <button class="bool-btn" id="btn-no" onclick="selAcomp('no')"><span class="bico">🚶</span>No, vine solo</button>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="btn-back" onclick="irPaso(3)">← Atrás</button>
+      <button class="btn-next" id="btn-sig4" onclick="irPaso(5)" disabled>Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- PASO 5: SIGNOS VITALES OPCIONALES -->
+  <div class="sec" id="sec5">
+    <div class="sec-title">Signos vitales 💓</div>
+    <div class="sec-sub">Si hay personal disponible, registra los signos vitales. <strong>Son opcionales</strong> — puedes continuar sin llenarlos.</div>
+
+    <!-- TOGGLE PARA ABRIR -->
+    <div class="vitales-toggle" id="vitales-toggle" onclick="toggleVitales()">
+      <div class="vt-ico">🩺</div>
+      <div class="vt-titulo">Registrar signos vitales</div>
+      <div class="vt-sub">Presión arterial, frecuencia cardiaca, temperatura, SpO₂, frecuencia respiratoria y glucosa</div>
+      <div class="vt-opcional">OPCIONAL</div>
+    </div>
+
+    <!-- INDICADOR SI YA SE REGISTRARON -->
+    <div class="vitales-registrados" id="vitales-registrados">
+      <span>✓</span> Signos vitales registrados — mejorarán la clasificación
+    </div>
+
+    <!-- FORMULARIO VITALES -->
+    <div class="vitales-form" id="vitales-form">
+      <div class="vitales-grid">
+
+        <div class="vital-field">
+          <label>Presión arterial <span>(mmHg)</span></label>
+          <input class="vital-input" id="v-presion" placeholder="120/80" oninput="validarVital('presion')">
+          <div class="vital-alerta-msg" id="va-presion">⚠ Presión baja — informar al personal</div>
+        </div>
+
+        <div class="vital-field">
+          <label>Frecuencia cardiaca <span>(lpm)</span></label>
+          <input class="vital-input" id="v-fc" type="number" placeholder="72" min="0" max="300" oninput="validarVital('fc')">
+          <div class="vital-alerta-msg" id="va-fc">⚠ FC fuera de rango — informar al personal</div>
+        </div>
+
+        <div class="vital-field">
+          <label>Temperatura <span>(°C)</span></label>
+          <input class="vital-input" id="v-temp" type="number" placeholder="36.5" step="0.1" min="30" max="45" oninput="validarVital('temp')">
+          <div class="vital-alerta-msg" id="va-temp">⚠ Temperatura anormal — informar al personal</div>
+        </div>
+
+        <div class="vital-field">
+          <label>Saturación O₂ <span>(%)</span></label>
+          <input class="vital-input" id="v-sato2" type="number" placeholder="98" min="0" max="100" oninput="validarVital('sato2')">
+          <div class="vital-alerta-msg" id="va-sato2">⚠ Saturación baja — informar al personal</div>
+        </div>
+
+        <div class="vital-field">
+          <label>Frecuencia respiratoria <span>(rpm)</span></label>
+          <input class="vital-input" id="v-fr" type="number" placeholder="16" min="0" max="60" oninput="validarVital('fr')">
+          <div class="vital-alerta-msg" id="va-fr">⚠ FR anormal — informar al personal</div>
+        </div>
+
+        <div class="vital-field">
+          <label>Glucosa <span>(mg/dL)</span></label>
+          <input class="vital-input" id="v-glucosa" type="number" placeholder="90" min="0" max="600" oninput="validarVital('glucosa')">
+          <div class="vital-alerta-msg" id="va-glucosa">⚠ Glucosa anormal — informar al personal</div>
+        </div>
+
+      </div>
+
+      <!-- ALERTA VITALES CRÍTICOS -->
+      <div id="vitales-alerta-critica" style="display:none;background:var(--red-lt);border:2px solid var(--red);border-radius:12px;padding:14px 16px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:800;color:var(--red);margin-bottom:6px;">🚨 SIGNOS VITALES CRÍTICOS DETECTADOS</div>
+        <div id="vitales-alerta-msgs" style="font-size:12px;color:var(--red);line-height:1.7;"></div>
+        <div style="font-size:12px;color:var(--red-dk);margin-top:8px;font-weight:600;">Por favor informa al personal médico de inmediato.</div>
+      </div>
+
+      <button class="btn-next" style="margin-top:4px" onclick="cerrarVitales()">✓ Confirmar vitales</button>
+    </div>
+
+    <div class="nav" style="margin-top:20px">
+      <button class="btn-back" onclick="irPaso(4)">← Atrás</button>
+      <button class="btn-next" id="btn-sig5" onclick="clasificar()">Registrarme ✓</button>
+    </div>
+  </div>
+
+  <!-- ANALIZANDO -->
+  <div class="analyzing" id="sec-anal">
+    <div class="spinner"></div>
+    <div class="anal-title">Analizando tu información...</div>
+    <div class="anal-sub">Determinando tu nivel de urgencia y área de atención.</div>
+  </div>
+
+  <!-- RESULTADO -->
+  <div class="resultado" id="sec-res"></div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, push, onValue }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCDTgiL6OvNFYh-PC4g57GTw04pclU-nfs",
+  authDomain: "triage-centro-de-salud.firebaseapp.com",
+  databaseURL: "https://triage-centro-de-salud-default-rtdb.firebaseio.com",
+  projectId: "triage-centro-de-salud",
+  storageBucket: "triage-centro-de-salud.firebasestorage.app",
+  messagingSenderId: "66063012451",
+  appId: "1:66063012451:web:8be493b361302fbd185e56"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+const pacsRef = ref(db,'pacientes');
+const histRef = ref(db,'historial');
+
+let pacientesLocales=[];
+onValue(pacsRef,snap=>{ pacientesLocales=snap.val()?Object.values(snap.val()):[] });
+
+/* ── ESTADO ── */
+let S={paso:1,tipo:null,nombre:'',edad:'',fechanac:'',sexo:'',doctor:'',dolor:0,acomp:null};
+let cronicasSeleccionadas=new Map(); // enfermedad → medicamento (string)
+let procedimientoSel=null;
+let alarmasSeleccionadas=new Map(); // texto de la alarma → nivel ('rojo'|'amarillo'|'verde')
+
+function toggleAlarma(el,nivel,texto){
+  if(alarmasSeleccionadas.has(texto)){
+    alarmasSeleccionadas.delete(texto);
+    el.classList.remove('sel');
+  }else{
+    alarmasSeleccionadas.set(texto,nivel);
+    el.classList.add('sel');
+  }
+}
+
+/* ── RELOJ ── */
+const tick=()=>document.getElementById('reloj').textContent=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+setInterval(tick,1000); tick();
+
+/* ── EXPONER FUNCIONES ── */
+window.selTipo    = t      => selTipo(t);
+window.irPaso     = n      => irPaso(n);
+window.toggleCron  = (b,v) => toggleCron(b,v);
+window.selProc     = (b,v) => selProc(b,v);
+window.selAcomp   = v      => selAcomp(v);
+window.clasificar = ()     => clasificar();
+window.reiniciar  = ()     => reiniciar();
+window.calcularEdad= ()    => calcularEdad();
+
+/* ── FECHA NACIMIENTO ── */
+function calcularEdad(){
+  const fn=document.getElementById('k-fechanac').value;
+  if(!fn) return;
+  const hoy=new Date(), nac=new Date(fn);
+  let edad=hoy.getFullYear()-nac.getFullYear();
+  const m=hoy.getMonth()-nac.getMonth();
+  if(m<0||(m===0&&hoy.getDate()<nac.getDate())) edad--;
+  if(edad<0||edad>130) return;
+  document.getElementById('k-edad').value=edad;
+  const lbl=document.getElementById('edad-calc-lbl');
+  lbl.textContent=`✓ Edad calculada: ${edad} años`;
+  lbl.style.display='block';
+}
+
+/* ── TIPO VISITA ── */
+function selTipo(t){
+  S.tipo=t;
+  document.getElementById('btn-nuevo-visit').className='tipo-btn'+(t==='nuevo'?' sel-nuevo':'');
+  document.getElementById('btn-seg-visit').className='tipo-btn'+(t==='seguimiento'?' sel-seg':'');
+  document.getElementById('btn-sig1').disabled=false;
+  const esSeg=t==='seguimiento';
+  document.getElementById('campo-doctor').style.display=esSeg?'block':'none';
+}
+
+/* ── ENFERMEDADES CRÓNICAS + MEDICAMENTOS ── */
+function toggleCron(btn,val){
+  if(val==='Ninguna'){
+    cronicasSeleccionadas.clear();
+    document.querySelectorAll('.sint-grid .sint-chip').forEach(b=>{ if(b.id!=='chip-cron-ninguna') b.classList.remove('sel'); });
+    document.getElementById('cron-otra-area').className='otro-area';
+    cronicasSeleccionadas.set('Ninguna','');
+    btn.classList.add('sel');
+  } else {
+    document.getElementById('chip-cron-ninguna').classList.remove('sel');
+    cronicasSeleccionadas.delete('Ninguna');
+    if(val==='Otra'){
+      document.getElementById('cron-otra-area').className = btn.classList.contains('sel') ? 'otro-area' : 'otro-area vis';
+    }
+    if(cronicasSeleccionadas.has(val)){
+      cronicasSeleccionadas.delete(val);
+      btn.classList.remove('sel');
+      if(val==='Otra') document.getElementById('cron-otra-area').className='otro-area';
+    } else {
+      cronicasSeleccionadas.set(val,'');
+      btn.classList.add('sel');
+    }
+  }
+  renderMedsInputs();
+  checkPaso3();
+}
+
+function renderMedsInputs(){
+  const wrap=document.getElementById('cron-meds-wrap');
+  const activas=[...cronicasSeleccionadas.keys()].filter(k=>k!=='Ninguna');
+  wrap.innerHTML=activas.map((enf,i)=>`
+    <div class="field">
+      <label>Medicamento(s) para ${enf}</label>
+      <input type="text" class="cron-med-inp" data-enf="${enf}" placeholder="Ej: Metformina 850mg cada 12h" oninput="actualizarMed(this)">
+    </div>`).join('');
+}
+window.actualizarMed = (el)=>{
+  cronicasSeleccionadas.set(el.dataset.enf, el.value);
+};
+
+/* ── PROCEDIMIENTO (selección única) ── */
+function selProc(btn,val){
+  const grids=document.querySelectorAll('.sec#sec3 .sint-grid');
+  const procGrid=grids[1];
+  procGrid.querySelectorAll('.sint-chip').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  procedimientoSel=val;
+  document.getElementById('proc-otro-area').className = val==='Otro' ? 'otro-area vis' : 'otro-area';
+  checkPaso3();
+}
+
+function checkPaso3(){
+  const hayCron = cronicasSeleccionadas.size>0;
+  const hayProc = procedimientoSel!==null;
+  document.getElementById('btn-sig3').disabled = !(hayCron && hayProc);
+}
+
+/* ── DOLOR ── */
+const dg=document.getElementById('dolor-grid');
+for(let i=1;i<=10;i++){
+  const b=document.createElement('button');
+  b.className='dolor-btn'; b.textContent=i;
+  b.onclick=()=>selDolor(i); dg.appendChild(b);
+}
+function selDolor(n){
+  S.dolor=n;
+  document.querySelectorAll('.dolor-btn').forEach((b,i)=>{
+    b.className='dolor-btn';
+    if(i+1<=n){
+      const v=i+1;
+      if(v<=3) b.classList.add('d-leve');
+      else if(v<=6) b.classList.add('d-mod');
+      else if(v<=8) b.classList.add('d-sev');
+      else b.classList.add('d-ext');
+    }
+  });
+  checkPaso4();
+}
+function selAcomp(v){
+  S.acomp=v;
+  document.getElementById('btn-si').className='bool-btn'+(v==='si'?' b-si':'');
+  document.getElementById('btn-no').className='bool-btn'+(v==='no'?' b-no':'');
+  checkPaso4();
+}
+function checkPaso4(){ document.getElementById('btn-sig4').disabled=!(S.dolor>0&&S.acomp!==null); }
+
+/* ── NAVEGACIÓN ── */
+function irPaso(n){
+  if(n===3){
+    const nom=document.getElementById('k-nombre').value.trim();
+    if(!nom){alert('Por favor ingresa tu nombre.');return;}
+    S.nombre=nom;
+    S.edad=document.getElementById('k-edad').value;
+    S.fechanac=document.getElementById('k-fechanac').value;
+    S.sexo=document.getElementById('k-sexo').value;
+    S.doctor=document.getElementById('k-doctor').value;
+  }
+  ['sec1','sec2','sec3','sec4','sec5'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById('sec-anal').classList.remove('on');
+  document.getElementById('sec-anal').style.display='';
+  document.getElementById('sec-res').classList.remove('on');
+  const el=document.getElementById('sec'+n);
+  if(el) el.classList.add('on');
+  S.paso=n; actualizarProg(n);
+}
+
+function actualizarProg(n){
+  for(let i=1;i<=5;i++){
+    const dot=document.getElementById('sd'+i), lbl=document.getElementById('sl'+i);
+    if(!dot) continue;
+    dot.className='step-dot'; lbl.className='step-lbl';
+    if(i<n){dot.classList.add('done');lbl.classList.add('done');dot.textContent='✓';}
+    else if(i===n){dot.classList.add('on');lbl.classList.add('on');dot.textContent=i;}
+    else dot.textContent=i;
+  }
+  for(let i=1;i<=4;i++){
+    const linea=document.getElementById('sln'+i+(i+1));
+    if(linea) linea.className='step-line'+(i<n?' done':'');
+  }
+}
+
+/* ══════════════════════════════════
+   SIGNOS VITALES OPCIONALES
+   ══════════════════════════════════ */
+window.toggleVitales = ()=>{
+  const toggle = document.getElementById('vitales-toggle');
+  const form   = document.getElementById('vitales-form');
+  const abierto = toggle.classList.contains('abierto');
+  if(abierto){
+    toggle.classList.remove('abierto');
+    form.classList.remove('vis');
+  } else {
+    toggle.classList.add('abierto');
+    form.classList.add('vis');
+  }
+};
+
+window.cerrarVitales = ()=>{
+  const form = document.getElementById('vitales-form');
+  const badge = document.getElementById('vitales-registrados');
+  // Guardar vitales en estado
+  S.vitalesIngreso = {
+    presion: document.getElementById('v-presion').value.trim(),
+    fc:      document.getElementById('v-fc').value.trim(),
+    temp:    document.getElementById('v-temp').value.trim(),
+    sato2:   document.getElementById('v-sato2').value.trim(),
+    fr:      document.getElementById('v-fr').value.trim(),
+    glucosa: document.getElementById('v-glucosa').value.trim(),
+  };
+  const tieneAlgo = Object.values(S.vitalesIngreso).some(v=>v!=='');
+  if(tieneAlgo){
+    badge.classList.add('vis');
+    document.getElementById('vitales-toggle').style.display='none';
+  }
+  form.classList.remove('vis');
+};
+
+// Validación en tiempo real con alertas visuales
+window.validarVital = (campo)=>{
+  const alertas = [];
+  const el = document.getElementById('v-'+campo);
+  const msg = document.getElementById('va-'+campo);
+  const val = parseFloat(el.value);
+
+  let esAlerta = false;
+  if(campo==='presion'){
+    const tas = parseFloat(el.value.split('/')[0]);
+    esAlerta = !isNaN(tas) && tas < 90;
+  } else if(campo==='fc'){
+    esAlerta = !isNaN(val) && (val > 130 || val < 40);
+  } else if(campo==='temp'){
+    esAlerta = !isNaN(val) && (val >= 39 || val < 35);
+  } else if(campo==='sato2'){
+    esAlerta = !isNaN(val) && val < 90;
+  } else if(campo==='fr'){
+    esAlerta = !isNaN(val) && (val > 30 || val < 8);
+  } else if(campo==='glucosa'){
+    esAlerta = !isNaN(val) && (val < 70 || val > 400);
+  }
+
+  el.className = 'vital-input' + (esAlerta ? ' alerta' : '');
+  msg.className = 'vital-alerta-msg' + (esAlerta ? ' vis' : '');
+
+  // Revisar todos los vitales para alerta crítica global
+  verificarAlertasCriticas();
+};
+
+function verificarAlertasCriticas(){
+  const msgs = [];
+  const tas = parseFloat((document.getElementById('v-presion').value||'').split('/')[0]);
+  const fc  = parseFloat(document.getElementById('v-fc').value);
+  const temp= parseFloat(document.getElementById('v-temp').value);
+  const sat = parseFloat(document.getElementById('v-sato2').value);
+  const fr  = parseFloat(document.getElementById('v-fr').value);
+  const gluc= parseFloat(document.getElementById('v-glucosa').value);
+
+  if(!isNaN(tas) && tas < 90)           msgs.push('⚠ TAS baja: '+tas+' mmHg — posible hipotensión/shock');
+  if(!isNaN(fc)  && fc > 130)           msgs.push('⚠ Taquicardia: '+fc+' lpm');
+  if(!isNaN(fc)  && fc < 40)            msgs.push('⚠ Bradicardia: '+fc+' lpm');
+  if(!isNaN(sat) && sat < 90)           msgs.push('⚠ SpO₂ baja: '+sat+'% — hipoxemia');
+  if(!isNaN(temp)&& temp >= 39)         msgs.push('⚠ Fiebre alta: '+temp+'°C');
+  if(!isNaN(temp)&& temp < 35)          msgs.push('⚠ Hipotermia: '+temp+'°C');
+  if(!isNaN(fr)  && fr > 30)            msgs.push('⚠ Taquipnea: '+fr+' rpm');
+  if(!isNaN(gluc)&& gluc < 70)          msgs.push('⚠ Hipoglucemia: '+gluc+' mg/dL');
+  if(!isNaN(gluc)&& gluc > 400)         msgs.push('⚠ Hiperglucemia: '+gluc+' mg/dL');
+
+  const box = document.getElementById('vitales-alerta-critica');
+  const msgEl = document.getElementById('vitales-alerta-msgs');
+  if(msgs.length > 0){
+    box.style.display = 'block';
+    msgEl.innerHTML = msgs.join('<br>');
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+/* ══════════════════════════════════
+   NIVELES DE PRIORIDAD (referencia para escalado por vitales)
+   ══════════════════════════════════ */
+const DESTINOS={
+  1:{dest:'Reanimación',tiempo:'Inmediato',color:'ROJO',nivel:'Crítico — Riesgo vital'},
+  2:{dest:'Box de Urgencias',tiempo:'15 minutos',color:'NARANJA',nivel:'Muy urgente — Emergencia'},
+  3:{dest:'Sala de espera — Valoración médica',tiempo:'30 minutos',color:'AMARILLO',nivel:'Pendiente de valoración médica'},
+};
+
+/* ── CLASIFICAR ── */
+async function clasificar(){
+  const otraCron=document.getElementById('k-cron-otra').value.trim();
+  if(cronicasSeleccionadas.has('Otra')&&!otraCron){alert('Por favor especifica la otra enfermedad crónica.');return;}
+  if(cronicasSeleccionadas.size===0){alert('Selecciona tus enfermedades crónicas, o "Ninguna" si no tienes.');return;}
+  if(!procedimientoSel){alert('Selecciona el procedimiento que te van a realizar.');return;}
+  const otroProc=document.getElementById('k-proc-otro').value.trim();
+  if(procedimientoSel==='Otro'&&!otroProc){alert('Por favor describe el procedimiento.');return;}
+
+  const cronicasFinal=[...cronicasSeleccionadas.keys()].map(k=>k==='Otra'?otraCron:k);
+  const medicamentosCronicos={};
+  cronicasSeleccionadas.forEach((med,enf)=>{ if(enf!=='Ninguna') medicamentosCronicos[enf==='Otra'?otraCron:enf]=med; });
+  const procedimientoFinal = procedimientoSel==='Otro' ? otroProc : procedimientoSel;
+  const motivo = procedimientoFinal;
+
+  ['sec1','sec2','sec3','sec4','sec5'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById('sec-res').classList.remove('on');
+  const anal=document.getElementById('sec-anal');
+  anal.style.display='flex'; anal.classList.add('on');
+  actualizarProg(5);
+  await delay(900);
+
+  /* Seguimiento */
+  if(S.tipo==='seguimiento'){
+    const pac={
+      id:Date.now(),num:siguienteNum(),
+      nombre:S.nombre,edad:S.edad,fechanac:S.fechanac,sexo:S.sexo,
+      motivo:`[SEGUIMIENTO] ${motivo}`,
+      cronicas:cronicasFinal,medicamentosCronicos,procedimiento:procedimientoFinal,
+      dolor:S.dolor,acomp:S.acomp,doctor:S.doctor,
+      banderas:[],alarmasDentales:[],
+      prioridad:5,color:'AZUL',nivel:'Seguimiento / Consulta programada',
+      destino:S.doctor?`Consulta — ${S.doctor}`:'Sala de Consultas',
+      tiempo_maximo:'Según agenda',
+      hora:new Date().toLocaleTimeString('es-MX',{hour12:false}),
+      fecha:new Date().toLocaleDateString('es-MX'),
+      timestamp:Date.now(),
+      justificacion:'Visita de seguimiento. Prioridad P5 Azul asignada automáticamente.',
+      instruccion:'Por favor toma asiento, el personal te llamará en el orden de tu cita.'
+    };
+    anal.style.display='none'; anal.classList.remove('on');
+    agregarYEmitir(pac); mostrarResultado(pac); return;
+  }
+
+  /* Nueva — prioridad según alarmas dentales seleccionadas (Rojo > Amarillo > Verde), con valor por defecto si no se marcó ninguna */
+  const NIVELES_DENTAL={
+    rojo:{prioridad:1,color:'ROJO',nivel:'Urgencia dental inmediata — riesgo vital o dolor incontrolable',destino:'Atención dental prioritaria',tiempo_maximo:'Inmediato (minutos)',
+      instruccion:'Por favor avisa de inmediato al personal, serás atendido de urgencia.'},
+    amarillo:{prioridad:3,color:'AMARILLO',nivel:'Urgente — atención el mismo día',destino:'Sala de espera — Valoración prioritaria',tiempo_maximo:'Máx. 24-48 horas',
+      instruccion:'Toma asiento, se te dará prioridad para atenderte el día de hoy.'},
+    verde:{prioridad:4,color:'VERDE',nivel:'No urgente — programable',destino:'Sala de espera',tiempo_maximo:'Según disponibilidad de agenda',
+      instruccion:'Toma asiento, serás atendido según el orden de la agenda.'}
+  };
+
+  let nivelDental=null;
+  if(alarmasSeleccionadas.size>0){
+    const niveles=[...alarmasSeleccionadas.values()];
+    if(niveles.includes('rojo')) nivelDental='rojo';
+    else if(niveles.includes('amarillo')) nivelDental='amarillo';
+    else nivelDental='verde';
+  }
+
+  let resultado;
+  if(nivelDental){
+    const base=NIVELES_DENTAL[nivelDental];
+    const items=[...alarmasSeleccionadas.entries()].filter(([t,n])=>n===nivelDental).map(([t])=>t);
+    resultado={
+      prioridad:base.prioridad,color:base.color,nivel:base.nivel,
+      destino:base.destino,tiempo_maximo:base.tiempo_maximo,
+      justificacion:`Se identificaron ${items.length} signo(s) de alarma nivel ${nivelDental.toUpperCase()}: ${items.join('; ')}.`,
+      instruccion:base.instruccion
+    };
+  } else {
+    resultado={
+      prioridad:3,color:DESTINOS[3].color,nivel:DESTINOS[3].nivel,
+      destino:DESTINOS[3].dest,tiempo_maximo:DESTINOS[3].tiempo,
+      justificacion:'Registro por kiosko sin evaluación de síntomas. Pendiente de valoración médica presencial para asignar prioridad definitiva.',
+      instruccion:'Toma asiento, el personal médico te llamará para tu valoración.'
+    };
+  }
+
+  // Ajuste por vitales si se registraron (solo ESCALA, nunca baja una prioridad ya asignada por las alarmas dentales)
+  if(S.vitalesIngreso){
+    const v=S.vitalesIngreso;
+    const tas=parseFloat((v.presion||'').split('/')[0]);
+    const fc=parseFloat(v.fc);
+    const sat=parseFloat(v.sato2);
+    const fr=parseFloat(v.fr);
+    const gluc=parseFloat(v.glucosa);
+    if((!isNaN(tas)&&tas<90)||(!isNaN(sat)&&sat<90)||(!isNaN(fc)&&fc>130)||(!isNaN(fc)&&fc<40)){
+      if(resultado.prioridad>1) resultado={prioridad:1,color:'ROJO',nivel:'Crítico — Riesgo vital',destino:'Reanimación',tiempo_maximo:'Inmediato',justificacion:resultado.justificacion+' Signos vitales críticos detectados al ingreso: requieren atención inmediata.',instruccion:'Por favor quédate donde estás, el personal médico vendrá de inmediato.'};
+    } else if((!isNaN(fr)&&fr>30)||(!isNaN(gluc)&&(gluc<70||gluc>400))){
+      if(resultado.prioridad>2) resultado={prioridad:2,color:'NARANJA',nivel:'Muy urgente — Emergencia',destino:'Box de Urgencias',tiempo_maximo:'15 minutos',justificacion:resultado.justificacion+' Parámetros vitales alterados al ingreso.',instruccion:'Dirígete al área indicada de inmediato, serás atendido en minutos.'};
+    }
+  }
+
+  const pac={
+    id:Date.now(),num:siguienteNum(),
+    nombre:S.nombre,edad:S.edad,fechanac:S.fechanac,sexo:S.sexo,
+    motivo,cronicas:cronicasFinal,medicamentosCronicos,procedimiento:procedimientoFinal,
+    banderas:[],alarmasDentales:[...alarmasSeleccionadas.entries()].map(([texto,nivel])=>({texto,nivel})),
+    dolor:S.dolor,acomp:S.acomp,
+    vitalesIngreso:S.vitalesIngreso||null,
+    prioridad:resultado.prioridad,color:resultado.color,
+    nivel:resultado.nivel,destino:resultado.destino,
+    tiempo_maximo:resultado.tiempo_maximo,
+    hora:new Date().toLocaleTimeString('es-MX',{hour12:false}),
+    fecha:new Date().toLocaleDateString('es-MX'),
+    timestamp:Date.now(),
+    justificacion:resultado.justificacion,
+    instruccion:resultado.instruccion
+  };
+
+  anal.style.display='none'; anal.classList.remove('on');
+  agregarYEmitir(pac); mostrarResultado(pac);
+}
+
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+
+function siguienteNum(){
+  if(pacientesLocales.length===0) return '001';
+  const max=Math.max(...pacientesLocales.map(p=>parseInt(p.num)||0));
+  return String(max+1).padStart(3,'0');
+}
+
+function agregarYEmitir(pac){
+  // Guardar en cola activa
+  push(pacsRef,pac).catch(e=>console.error(e));
+  // Guardar en historial permanente
+  push(histRef,{
+    ...pac,
+    estadoFinal:'Registrado en kiosko',
+    timestampHistorial:Date.now()
+  }).catch(e=>console.error(e));
+}
+
+/* ── RESULTADO ── */
+const ICOS={1:'🚨',2:'⚠️',3:'🔶',4:'✅',5:'🔵'};
+function mostrarResultado(pac){
+  const p=pac.prioridad;
+  const esSeg=pac.motivo.startsWith('[SEGUIMIENTO]');
+  const banderas=pac.banderas||[];
+  document.getElementById('sec-res').innerHTML=`
+    <div class="theme-p${p}">
+      <div class="res-card">
+        <div class="res-ico">${ICOS[p]}</div>
+        <div>
+          <div class="res-prio-lbl">Prioridad ${p} — ${pac.color}</div>
+          <div class="res-pac-name">${pac.nombre}</div>
+          <div class="res-nivel">${pac.nivel}</div>
+        </div>
+      </div>
+      ${banderas.length>0?`
+      <div class="res-banderas">
+        <div class="res-banderas-tit">🚨 Banderas de alarma detectadas</div>
+        <div class="res-banderas-chips">
+          ${banderas.map(b=>`<div class="res-bandera">${b.split(' ').slice(0,5).join(' ')}</div>`).join('')}
+        </div>
+      </div>`:''}
+      ${(pac.alarmasDentales&&pac.alarmasDentales.length>0)?`
+      <div class="res-banderas" style="background:${pac.alarmasDentales[0].nivel==='rojo'?'var(--red-lt)':pac.alarmasDentales[0].nivel==='amarillo'?'rgba(202,138,4,.15)':'var(--verde-lt)'};border-color:${pac.alarmasDentales[0].nivel==='rojo'?'var(--red)':pac.alarmasDentales[0].nivel==='amarillo'?'var(--yellow)':'var(--verde)'}">
+        <div class="res-banderas-tit" style="color:${pac.alarmasDentales[0].nivel==='rojo'?'var(--red)':pac.alarmasDentales[0].nivel==='amarillo'?'var(--yellow)':'var(--verde)'}">🦷 Situaciones que reportaste</div>
+        <div class="res-banderas-chips">
+          ${pac.alarmasDentales.map(a=>`<div class="res-bandera" style="background:${a.nivel==='rojo'?'var(--red)':a.nivel==='amarillo'?'var(--yellow)':'var(--verde)'}">${a.texto.split(' ').slice(0,6).join(' ')}</div>`).join('')}
+        </div>
+      </div>`:''}
+      <div class="res-destino">
+        <div class="res-dest-ico">🏥</div>
+        <div>
+          <div class="res-dest-lbl">Dirígete a</div>
+          <div class="res-dest-val">${pac.destino}</div>
+        </div>
+      </div>
+      <div class="res-wait">
+        <div>
+          <div class="res-wait-lbl">Tiempo máximo espera</div>
+          <div class="res-wait-val">${pac.tiempo_maximo}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="res-wait-lbl">Tu número</div>
+          <div class="res-wait-val">#${pac.num}</div>
+        </div>
+      </div>
+      <div class="res-msg${esSeg?' azul':''}">💬 ${pac.instruccion}</div>
+      <!-- COUNTDOWN REINICIO AUTOMÁTICO -->
+      <div id="reinicio-countdown" style="text-align:center;margin-bottom:14px;">
+        <div style="font-family:var(--font);font-size:13px;color:var(--gray);margin-bottom:8px;">
+          Reinicio automático en <strong id="countdown-num" style="color:var(--T)">30</strong> segundos
+        </div>
+        <div style="background:var(--gray-lt);border-radius:20px;height:4px;overflow:hidden;">
+          <div id="countdown-bar" style="height:100%;background:var(--T);border-radius:20px;width:100%;transition:width 1s linear;"></div>
+        </div>
+      </div>
+      <button class="btn-nuevo" onclick="reiniciar()">Registrar otro paciente ahora</button>
+    </div>`;
+  document.getElementById('sec-res').classList.add('on');
+
+  // Arrancar countdown de 30 segundos
+  let segs = 30;
+  const intervalo = setInterval(()=>{
+    segs--;
+    const numEl = document.getElementById('countdown-num');
+    const barEl = document.getElementById('countdown-bar');
+    if(numEl) numEl.textContent = segs;
+    if(barEl) barEl.style.width = (segs/30*100)+'%';
+    if(segs<=0){ clearInterval(intervalo); reiniciar(); }
+  },1000);
+  // Guardar referencia para cancelar si el usuario reinicia antes
+  window._reinicioInterval = intervalo;
+}
+
+/* ── REINICIAR ── */
+function reiniciar(){
+  // Cancelar countdown si estaba corriendo
+  if(window._reinicioInterval){ clearInterval(window._reinicioInterval); window._reinicioInterval=null; }
+  S={paso:1,tipo:null,nombre:'',edad:'',fechanac:'',sexo:'',doctor:'',dolor:0,acomp:null,vitalesIngreso:null};
+  cronicasSeleccionadas.clear();
+  procedimientoSel=null;
+  alarmasSeleccionadas.clear();
+  ['k-nombre','k-edad','k-doctor','k-cron-otra','k-proc-otro'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('k-fechanac').value='';
+  document.getElementById('k-sexo').value='';
+  document.getElementById('edad-calc-lbl').style.display='none';
+  document.querySelectorAll('.sint-chip').forEach(b=>b.classList.remove('sel'));
+  document.querySelectorAll('.alarma-chip').forEach(b=>b.classList.remove('sel'));
+  document.querySelectorAll('.dolor-btn').forEach(b=>b.className='dolor-btn');
+  document.getElementById('btn-si').className='bool-btn';
+  document.getElementById('btn-no').className='bool-btn';
+  document.getElementById('btn-sig1').disabled=true;
+  document.getElementById('btn-sig3').disabled=true;
+  document.getElementById('btn-sig4').disabled=true;
+  document.getElementById('cron-otra-area').className='otro-area';
+  document.getElementById('proc-otro-area').className='otro-area';
+  document.getElementById('cron-meds-wrap').innerHTML='';
+  document.getElementById('btn-nuevo-visit').className='tipo-btn';
+  document.getElementById('btn-seg-visit').className='tipo-btn';
+  document.getElementById('campo-doctor').style.display='none';
+  // Limpiar vitales
+  ['v-presion','v-fc','v-temp','v-sato2','v-fr','v-glucosa'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.value='';el.className='vital-input';}
+  });
+  document.querySelectorAll('.vital-alerta-msg').forEach(el=>el.className='vital-alerta-msg');
+  document.getElementById('vitales-alerta-critica').style.display='none';
+  document.getElementById('vitales-toggle').classList.remove('abierto');
+  document.getElementById('vitales-toggle').style.display='';
+  document.getElementById('vitales-form').classList.remove('vis');
+  document.getElementById('vitales-registrados').classList.remove('vis');
+  document.getElementById('sec-res').innerHTML='';
+  document.getElementById('sec-res').classList.remove('on');
+  irPaso(1);
+}
+</script>
+</body>
+</html>
