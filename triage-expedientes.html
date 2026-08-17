@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TRIAGE — Expedientes Clínicos</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Manchester invariable */
+  --R:#E63946;--O:#F4A261;--Y:#E9C46A;--G:#2A9D8F;--B:#457B9D;--T:#0694A2;--P:#6B46C1;
+  /* Superficies */
+  --bg:#0A0E1A;--panel:#111827;--panel2:#0D1520;--brd:#1E2D3D;--brd2:#1E2D3D;
+  /* Texto */
+  --txt:#E8F4FD;--txt2:#E8F4FD;--mute:#6B7C93;--mute2:#4A5568;
+  /* Acento de acción */
+  --verde:#2A9D8F;--verde-dk:#1F7A6F;--verde-lt:rgba(42,157,143,.18);--ssa-vino:#0694A2;
+  /* Tipografía */
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans','Outfit',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column;}
+
+/* header */
+header{background:var(--panel);border-bottom:1px solid var(--brd);padding:11px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.logo{display:flex;align-items:center;gap:10px;}
+.cruz{width:32px;height:32px;background:var(--ssa-vino);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.lt{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:3px;}
+.ls{font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:2px;}
+#clk{font-family:var(--mono);font-size:16px;color:var(--G);letter-spacing:2px;}
+.hbtn{background:transparent;border:1px solid var(--G);color:var(--G);font-family:var(--mono);font-size:10px;letter-spacing:2px;padding:6px 12px;border-radius:4px;cursor:pointer;transition:all .2s;}
+.hbtn:hover{background:var(--G);color:#000;}
+
+/* toolbar búsqueda */
+.tb{background:var(--panel);border-bottom:1px solid var(--brd);padding:10px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.buscador{flex:1;min-width:200px;max-width:420px;position:relative;}
+.buscar-inp{width:100%;background:var(--panel2);border:1px solid var(--brd);border-radius:20px;color:var(--txt);font-family:var(--sans);font-size:13px;padding:9px 16px 9px 34px;outline:none;transition:border-color .2s;}
+.buscar-inp:focus{border-color:var(--T);}
+.buscar-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.5;}
+.tb-info{font-family:var(--mono);font-size:10px;color:var(--mute);letter-spacing:1px;}
+
+/* layout */
+.main{display:grid;grid-template-columns:370px 1fr;flex:1;min-height:0;overflow:hidden;}
+
+/* lista de pacientes */
+.plist{padding:18px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:7px;border-right:1px solid var(--brd);}
+.lhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.ltit{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--mute);}
+.lbadge{background:var(--brd);font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:20px;}
+
+.prow{background:var(--panel);border:1px solid var(--brd);border-radius:9px;padding:12px 14px;
+  display:flex;gap:12px;align-items:center;cursor:pointer;transition:all .2s;border-left:4px solid var(--brd);}
+.prow:hover{background:#151f30;border-color:var(--T);}
+.prow.sel{background:#0d1828;border-color:var(--T);border-left-color:var(--T);}
+.pav{width:40px;height:40px;border-radius:50%;background:var(--panel2);border:1px solid var(--brd);
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:13px;color:var(--T);flex-shrink:0;}
+.pinfo{min-width:0;flex:1;}
+.pnom{font-size:13px;font-weight:600;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pmeta{font-size:11px;color:var(--mute);font-family:var(--mono);}
+.pult{font-size:10px;color:var(--mute2);margin-top:2px;}
+.pvis{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--T);background:rgba(6,148,162,.12);padding:3px 8px;border-radius:10px;flex-shrink:0;}
+
+.empty{text-align:center;padding:50px 20px;color:var(--mute);font-family:var(--mono);font-size:11px;opacity:.6;}
+
+/* detalle */
+.pdet{overflow-y:auto;}
+.det-empty{padding:80px 28px;text-align:center;color:var(--mute);font-family:var(--mono);font-size:12px;line-height:2;}
+.det-empty-i{font-size:40px;margin-bottom:14px;}
+.det-in{padding:26px 30px;}
+.dhead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--brd);}
+.dnm{font-size:22px;font-weight:700;color:#fff;margin-bottom:5px;}
+.dmt{font-family:var(--mono);font-size:11px;color:var(--mute);}
+.dstats{display:flex;gap:18px;margin-top:10px;}
+.dstat{text-align:center;}
+.dstat-n{font-size:18px;font-weight:800;color:var(--T);font-family:var(--mono);}
+.dstat-l{font-size:9px;color:var(--mute);letter-spacing:1px;text-transform:uppercase;}
+.del-exp-btn{background:transparent;border:1px solid var(--R);color:var(--R);font-family:var(--mono);font-size:10px;letter-spacing:1px;padding:9px 14px;border-radius:6px;cursor:pointer;transition:all .2s;flex-shrink:0;white-space:nowrap;}
+.del-exp-btn:hover{background:var(--R);color:#fff;}
+
+.tl-tit{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--mute);margin-bottom:14px;}
+
+/* tarjeta de visita */
+.visita{background:var(--panel);border:1px solid var(--brd);border-radius:12px;margin-bottom:14px;overflow:hidden;border-left:4px solid transparent;}
+.visita.p1{border-left-color:var(--R);}
+.visita.p2{border-left-color:var(--O);}
+.visita.p3{border-left-color:var(--Y);}
+.visita.p4{border-left-color:var(--G);}
+.visita.p5{border-left-color:var(--T);}
+.vhdr{padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+.vico{font-size:20px;flex-shrink:0;}
+.vinfo{flex:1;min-width:0;}
+.vfecha{font-family:var(--mono);font-size:11px;font-weight:700;}
+.vmot{font-size:12px;color:var(--mute);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.vestado{font-family:var(--mono);font-size:9px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--panel2);color:var(--mute);white-space:nowrap;}
+.vtoggle{font-size:11px;color:var(--mute);transition:transform .2s;flex-shrink:0;}
+.vtoggle.open{transform:rotate(180deg);}
+.vbody{display:none;padding:0 16px 16px;border-top:1px solid var(--brd);}
+.vbody.open{display:block;}
+.vsec{margin-top:14px;}
+.vseclbl{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--mute);margin-bottom:7px;text-transform:uppercase;}
+.vsecval{font-size:13px;color:var(--txt);line-height:1.6;}
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.vchip{display:inline-block;background:var(--panel2);border:1px solid var(--brd);color:var(--txt2);font-size:11px;padding:4px 10px;border-radius:14px;margin:2px 4px 2px 0;}
+.vchip.bandera{background:rgba(230,57,70,.12);border-color:var(--R);color:var(--R);}
+.vtabla{width:100%;border-collapse:collapse;margin-top:4px;}
+.vtabla td{font-size:11px;padding:5px 8px;border-bottom:1px solid var(--brd);font-family:var(--mono);color:var(--txt2);}
+.vtabla td:first-child{color:var(--mute);width:40%;}
+.vnota{background:var(--panel2);border-radius:8px;padding:9px 11px;margin-bottom:6px;font-size:12px;line-height:1.5;}
+.vnota-meta{font-size:9px;color:var(--mute);margin-top:4px;font-family:var(--mono);}
+.vedit{margin-top:14px;background:transparent;border:1px solid var(--T);color:var(--T);font-family:var(--mono);font-size:10px;letter-spacing:2px;padding:9px 16px;border-radius:6px;cursor:pointer;transition:all .2s;}
+.vedit:hover{background:var(--T);color:#000;}
+
+/* MODAL EDICIÓN */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;padding:20px;}
+.modal.show{display:flex;}
+.modal-box{background:var(--panel);border:1px solid var(--brd);border-radius:14px;padding:26px;width:480px;max-width:100%;max-height:86vh;overflow-y:auto;display:flex;flex-direction:column;gap:16px;}
+.m-tit{font-size:16px;font-weight:700;}
+.m-sub{font-family:var(--mono);font-size:10px;color:var(--mute);letter-spacing:1px;margin-top:2px;}
+.m-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--mute);margin-bottom:6px;}
+.m-input,.m-textarea{width:100%;background:var(--panel2);border:1px solid var(--brd);border-radius:7px;color:var(--txt);font-family:var(--sans);font-size:13px;padding:10px 12px;outline:none;transition:border-color .2s;}
+.m-input:focus,.m-textarea:focus{border-color:var(--T);}
+.m-textarea{resize:vertical;min-height:60px;line-height:1.5;}
+.m-notas-list{display:flex;flex-direction:column;gap:8px;max-height:180px;overflow-y:auto;}
+.m-nota-row{display:flex;gap:8px;align-items:flex-start;background:var(--panel2);border-radius:8px;padding:8px 10px;}
+.m-nota-txt{flex:1;font-size:12px;line-height:1.5;}
+.m-nota-del{background:transparent;border:none;color:var(--R);cursor:pointer;font-size:13px;flex-shrink:0;}
+.m-nota-add{display:flex;gap:8px;}
+.m-nota-add .m-textarea{flex:1;min-height:44px;}
+.m-add-btn{background:var(--T);border:none;color:#000;font-family:var(--mono);font-size:10px;font-weight:700;padding:0 14px;border-radius:7px;cursor:pointer;white-space:nowrap;}
+.m-btns{display:flex;gap:8px;margin-top:4px;}
+.m-ok{flex:1;padding:12px;border-radius:7px;border:none;background:var(--verde);color:#fff;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:opacity .2s;}
+.m-ok:hover{opacity:.85;}
+.m-cancel{padding:12px 18px;border-radius:7px;border:1px solid var(--brd);background:transparent;color:var(--mute);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .2s;}
+.m-cancel:hover{border-color:var(--R);color:var(--R);}
+
+/* flash */
+.flash{position:fixed;top:70px;right:20px;background:var(--verde);color:#fff;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1px;padding:10px 18px;border-radius:8px;opacity:0;transform:translateY(-8px);transition:all .3s;pointer-events:none;z-index:300;}
+.flash.show{opacity:1;transform:translateY(0);}
+
+/* footer */
+footer{background:var(--panel);border-top:1px solid var(--brd);padding:9px 24px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
+.ri{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:var(--mute);}
+.live{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--G);display:flex;align-items:center;gap:6px;}
+.ldot{width:5px;height:5px;border-radius:50%;background:var(--G);animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+@media (max-width:860px){
+  .main{grid-template-columns:1fr;}
+  .plist{border-right:none;border-bottom:1px solid var(--brd);max-height:40vh;}
+}
+</style>
+<script src="triage-auth.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="cruz">📁</div>
+    <div><div class="lt">EXPEDIENTES CLÍNICOS</div><div class="ls">CLÍNICA UVM · HISTORIAL DE PACIENTES</div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <div id="clk">--:--:--</div>
+    <button class="hbtn" onclick="window.open('triage-medico.html')">⚕ MÉDICO</button>
+    <button class="hbtn" onclick="window.open('triage-observacion.html')">🛏 OBS.</button>
+    <button class="hbtn" onclick="window.open('triage-reportes.html')">📊 REP.</button>
+  </div>
+</header>
+
+<div class="tb">
+  <div class="buscador">
+    <span class="buscar-ico">🔍</span>
+    <input class="buscar-inp" id="buscar" placeholder="Buscar paciente por nombre…" oninput="renderLista()">
+  </div>
+  <div class="tb-info" id="tb-info">— pacientes con expediente</div>
+</div>
+
+<div class="main">
+  <div class="plist">
+    <div class="lhdr">
+      <div class="ltit">PACIENTES</div>
+      <div class="lbadge" id="lbadge">0</div>
+    </div>
+    <div id="lista"></div>
+  </div>
+  <div class="pdet" id="pdet">
+    <div class="det-empty">
+      <div class="det-empty-i">📁</div>
+      Selecciona un paciente<br>para ver su expediente<br>e historial completo
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="ri">📁 <span id="totalPac">0</span> expedientes</div>
+  <div class="ri">🗓 <span id="totalVis">0</span> visitas totales</div>
+  <div class="live"><div class="ldot"></div>EN VIVO</div>
+</footer>
+
+<div class="flash" id="flash">✓ Cambios guardados</div>
+
+<!-- MODAL EDICIÓN DE VISITA -->
+<div class="modal" id="modal-edit">
+  <div class="modal-box">
+    <div>
+      <div class="m-tit">✎ Editar visita</div>
+      <div class="m-sub" id="m-sub">—</div>
+    </div>
+    <div>
+      <div class="m-label">MOTIVO</div>
+      <input class="m-input" id="m-motivo">
+    </div>
+    <div>
+      <div class="m-label">ESTADO / DIAGNÓSTICO FINAL</div>
+      <input class="m-input" id="m-estado">
+    </div>
+    <div>
+      <div class="m-label">NOTAS DE EVOLUCIÓN</div>
+      <div class="m-notas-list" id="m-notas-list"></div>
+      <div class="m-nota-add" style="margin-top:8px;">
+        <textarea class="m-textarea" id="m-nota-nueva" placeholder="Agregar nueva nota…"></textarea>
+        <button class="m-add-btn" onclick="agregarNotaModal()">+ Agregar</button>
+      </div>
+    </div>
+    <div class="m-btns">
+      <button class="m-cancel" onclick="cerrarModal()">Cancelar</button>
+      <button class="m-ok" onclick="guardarEdicion()">✓ Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ELIMINAR EXPEDIENTE -->
+<div class="modal" id="modal-eliminar">
+  <div class="modal-box">
+    <div>
+      <div class="m-tit" style="color:var(--R)">🗑 Eliminar expediente completo</div>
+      <div class="m-sub" id="m-elim-sub">—</div>
+    </div>
+    <div style="background:rgba(230,57,70,.1);border:1px solid var(--R);border-radius:8px;padding:12px 14px;font-size:12.5px;line-height:1.6;color:var(--txt2)">
+      Esta acción es <strong>permanente</strong> y borrará todas las visitas de este expediente de la base de datos. Quedará un registro de auditoría con tu nombre, pero los datos clínicos no se podrán recuperar desde el sistema.
+    </div>
+    <div>
+      <div class="m-label">PARA CONFIRMAR, ESCRIBE "ELIMINAR"</div>
+      <input class="m-input" id="m-elim-confirm" placeholder="ELIMINAR" autocomplete="off">
+    </div>
+    <div class="m-btns">
+      <button class="m-cancel" onclick="cerrarModalEliminar()">Cancelar</button>
+      <button class="m-ok" id="m-elim-btn" style="background:var(--R)" onclick="confirmarEliminacion()">🗑 Eliminar definitivamente</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, update, remove, push, set }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCDTgiL6OvNFYh-PC4g57GTw04pclU-nfs",
+  authDomain: "triage-centro-de-salud.firebaseapp.com",
+  databaseURL: "https://triage-centro-de-salud-default-rtdb.firebaseio.com",
+  projectId: "triage-centro-de-salud",
+  storageBucket: "triage-centro-de-salud.firebasestorage.app",
+  messagingSenderId: "66063012451",
+  appId: "1:66063012451:web:8be493b361302fbd185e56"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+const histRef = ref(db, 'historial');
+const auditRef = ref(db, 'auditoria_eliminaciones');
+
+function usuarioActual(){
+  try{
+    const s = JSON.parse(localStorage.getItem('triage_sesion')||'null');
+    return s && s.nombre ? s.nombre : 'Usuario no identificado';
+  }catch(e){ return 'Usuario no identificado'; }
+}
+
+const ICOS={1:'🚨',2:'⚠️',3:'🔶',4:'✅',5:'🔵'};
+const COLS={1:'var(--R)',2:'var(--O)',3:'var(--Y)',4:'var(--G)',5:'var(--T)'};
+const NOMS={1:'P1 · CRÍTICO',2:'P2 · EMERGENCIA',3:'P3 · URGENTE',4:'P4 · MENOR',5:'P5 · CONSULTA'};
+
+let visitas=[];       // todos los registros de historial con su key
+let pacientes=[];     // agrupados por clave nombre+fechanac
+let selKey=null;      // clave del paciente seleccionado
+let visitaEditando=null; // key de la visita en edición
+let notasModalTmp=[];    // notas temporales dentro del modal
+
+/* ── Normalización y clave de emparejamiento ── */
+function normNombre(n){
+  return (n||'').trim().toLowerCase().replace(/\s+/g,' ');
+}
+function claveDe(p){
+  const nom = normNombre(p.nombre);
+  const fn  = (p.fechanac||'').trim();
+  return fn ? `${nom}|${fn}` : `${nom}|edad:${p.edad||'?'}`;
+}
+function iniciales(nombre){
+  const partes=(nombre||'?').trim().split(/\s+/);
+  return ((partes[0]?.[0]||'')+(partes[1]?.[0]||'')).toUpperCase();
+}
+
+/* ── Cargar historial en tiempo real ── */
+onValue(histRef, snap=>{
+  const val = snap.val()||{};
+  visitas = Object.entries(val).map(([key,v])=>({key,...v}));
+
+  const grupos={};
+  visitas.forEach(v=>{
+    const k=claveDe(v);
+    if(!grupos[k]) grupos[k]={clave:k,nombre:v.nombre,edad:v.edad,sexo:v.sexo,fechanac:v.fechanac,visitas:[]};
+    grupos[k].visitas.push(v);
+  });
+  pacientes=Object.values(grupos).map(g=>{
+    g.visitas.sort((a,b)=>(b.timestampAlta||b.timestamp||0)-(a.timestampAlta||a.timestamp||0));
+    g.ultima=g.visitas[0];
+    return g;
+  }).sort((a,b)=>(b.ultima.timestampAlta||b.ultima.timestamp||0)-(a.ultima.timestampAlta||a.ultima.timestamp||0));
+
+  document.getElementById('totalPac').textContent=pacientes.length;
+  document.getElementById('totalVis').textContent=visitas.length;
+
+  renderLista();
+  if(selKey){
+    const g=pacientes.find(p=>p.clave===selKey);
+    if(g) renderDetalle(g); else { selKey=null; document.getElementById('pdet').innerHTML='<div class="det-empty"><div class="det-empty-i">📁</div>Selecciona un paciente</div>'; }
+  }
+});
+
+/* ── Lista de pacientes (con filtro de búsqueda) ── */
+window.renderLista = function(){
+  const q=normNombre(document.getElementById('buscar').value);
+  const fl = q ? pacientes.filter(p=>normNombre(p.nombre).includes(q)) : pacientes;
+
+  document.getElementById('lbadge').textContent=fl.length;
+  document.getElementById('tb-info').textContent=`${pacientes.length} paciente${pacientes.length===1?'':'s'} con expediente`;
+
+  const lista=document.getElementById('lista');
+  if(fl.length===0){
+    lista.innerHTML='<div class="empty">Sin resultados</div>';
+    return;
+  }
+  lista.innerHTML=fl.map(g=>{
+    const u=g.ultima;
+    return `<div class="prow ${selKey===g.clave?'sel':''}" onclick="seleccionar('${g.clave}')">
+      <div class="pav">${iniciales(g.nombre)}</div>
+      <div class="pinfo">
+        <div class="pnom">${g.nombre||'Sin nombre'}</div>
+        <div class="pmeta">${g.edad?g.edad+'a':'?'} · ${g.sexo||'—'}</div>
+        <div class="pult">Última visita: ${u.fechaAlta||u.fecha||'—'}</div>
+      </div>
+      <div class="pvis">${g.visitas.length}</div>
+    </div>`;
+  }).join('');
+};
+
+window.seleccionar = function(clave){
+  selKey=clave;
+  const g=pacientes.find(p=>p.clave===clave);
+  renderLista();
+  if(g) renderDetalle(g);
+};
+
+/* ── Detalle: cabecera + timeline de visitas ── */
+function renderDetalle(g){
+  const primera=g.visitas[g.visitas.length-1];
+
+  // Agregado de enfermedades crónicas y medicamentos a través de TODAS las visitas
+  const cronicasMap={}; // enfermedad -> último medicamento reportado
+  g.visitas.forEach(v=>{
+    const arr=Array.isArray(v.cronicas)?v.cronicas.filter(x=>x&&x!=='Ninguna'):[];
+    const meds=v.medicamentosCronicos&&typeof v.medicamentosCronicos==='object'?v.medicamentosCronicos:{};
+    arr.forEach(e=>{ if(!(e in cronicasMap) || meds[e]) cronicasMap[e]=meds[e]||cronicasMap[e]||''; });
+  });
+  const cronicasKeys=Object.keys(cronicasMap);
+
+  document.getElementById('pdet').innerHTML=`
+    <div class="det-in">
+      <div class="dhead">
+        <div>
+          <div class="dnm">${g.nombre||'Sin nombre'}</div>
+          <div class="dmt">${g.edad?g.edad+' años':'Edad ?'} · ${g.sexo||'—'} ${g.fechanac?'· Nac. '+g.fechanac:''}</div>
+          <div class="dstats">
+            <div class="dstat"><div class="dstat-n">${g.visitas.length}</div><div class="dstat-l">Visitas</div></div>
+            <div class="dstat"><div class="dstat-n">${primera.fechaAlta||primera.fecha||'—'}</div><div class="dstat-l">Primera visita</div></div>
+          </div>
+        </div>
+        <button class="del-exp-btn" onclick="abrirModalEliminar()">🗑 Eliminar expediente</button>
+      </div>
+
+      ${cronicasKeys.length?`<div class="vsec" style="background:var(--panel2);border:1px solid var(--brd);border-radius:10px;padding:12px 14px;margin-bottom:20px;">
+        <div class="vseclbl" style="margin-bottom:8px;">🩺 Enfermedades crónicas y medicamentos (acumulado del expediente)</div>
+        <div>${cronicasKeys.map(e=>`<span class="vchip">${e}${cronicasMap[e]?' — '+cronicasMap[e]:''}</span>`).join('')}</div>
+      </div>`:''}
+
+      <div class="tl-tit">HISTORIAL DE VISITAS (más reciente primero)</div>
+      <div id="timeline">${g.visitas.map((v,i)=>visitaCard(v,i)).join('')}</div>
+    </div>`;
+}
+
+function visitaCard(v,i){
+  const p=v.prioridad||5;
+  const c=COLS[p];
+  const vitalesArr=Array.isArray(v.vitales)?v.vitales:[];
+  const medsArr=Array.isArray(v.medicamentos)?v.medicamentos:[];
+  const notasArr=Array.isArray(v.notas)?v.notas:[];
+  const estudiosArr=Array.isArray(v.estudios)?v.estudios:[];
+  const banderas=Array.isArray(v.banderas)?v.banderas:[];
+  const sintomas=Array.isArray(v.sintomas)?v.sintomas:[];
+  const cronicasArr=Array.isArray(v.cronicas)?v.cronicas.filter(x=>x&&x!=='Ninguna'):[];
+  const medsCronicos=v.medicamentosCronicos&&typeof v.medicamentosCronicos==='object'?v.medicamentosCronicos:{};
+  const alarmasArr=Array.isArray(v.alarmasDentales)?v.alarmasDentales:[];
+  const ALARMA_COL={rojo:'var(--R)',amarillo:'var(--Y)',verde:'var(--G)'};
+
+  return `<div class="visita p${p}">
+    <div class="vhdr" onclick="toggleVisita(${i})">
+      <div class="vico">${ICOS[p]||'📋'}</div>
+      <div class="vinfo">
+        <div class="vfecha" style="color:${c}">${v.fechaAlta||v.fecha||'—'} · ${v.horaAlta||v.hora||'—'}</div>
+        <div class="vmot">${(v.motivo||'').replace('[SEGUIMIENTO] ','')}</div>
+      </div>
+      <div class="vestado">${v.estadoFinal||'—'}</div>
+      <div class="vtoggle" id="vt-${i}">▼</div>
+    </div>
+    <div class="vbody" id="vb-${i}">
+      <div class="vgrid">
+        <div class="vsec">
+          <div class="vseclbl">Prioridad</div>
+          <div class="vsecval" style="color:${c};font-weight:700">${NOMS[p]||'—'}</div>
+        </div>
+        <div class="vsec">
+          <div class="vseclbl">Destino</div>
+          <div class="vsecval">${v.destino||'—'}</div>
+        </div>
+      </div>
+
+      ${v.procedimiento?`<div class="vsec">
+        <div class="vseclbl">Procedimiento solicitado</div>
+        <div class="vsecval">${v.procedimiento}</div>
+      </div>`:''}
+
+      ${cronicasArr.length?`<div class="vsec">
+        <div class="vseclbl">Enfermedades crónicas</div>
+        <div>${cronicasArr.map(e=>{
+          const med=medsCronicos[e];
+          return `<span class="vchip">${e}${med?' — '+med:''}</span>`;
+        }).join('')}</div>
+      </div>`:''}
+
+      ${sintomas.length?`<div class="vsec">
+        <div class="vseclbl">Síntomas</div>
+        <div>${sintomas.map(s=>`<span class="vchip">${s}</span>`).join('')}</div>
+      </div>`:''}
+
+      ${banderas.length?`<div class="vsec">
+        <div class="vseclbl">Banderas de alarma</div>
+        <div>${banderas.map(b=>`<span class="vchip bandera">⚠ ${b}</span>`).join('')}</div>
+      </div>`:''}
+
+      ${alarmasArr.length?`<div class="vsec">
+        <div class="vseclbl">Alarmas dentales reportadas</div>
+        <div>${alarmasArr.map(a=>`<span class="vchip" style="border-color:${ALARMA_COL[a.nivel]||'var(--brd)'};color:${ALARMA_COL[a.nivel]||'var(--txt2)'}">${a.nivel==='rojo'?'🔴':a.nivel==='amarillo'?'🟡':'🟢'} ${a.texto}</span>`).join('')}</div>
+      </div>`:''}
+
+      ${vitalesArr.length?`<div class="vsec">
+        <div class="vseclbl">Signos vitales registrados (${vitalesArr.length})</div>
+        <table class="vtabla">${vitalesArr.map(vt=>`<tr><td>${vt.hora||''}</td><td>PA ${vt.presion||'—'} · T ${vt.temp||'—'}°C · Sat ${vt.sato2||'—'}% · FC ${vt.fc||'—'} lpm</td></tr>`).join('')}</table>
+      </div>`:''}
+
+      ${medsArr.length?`<div class="vsec">
+        <div class="vseclbl">Medicamentos administrados</div>
+        <div>${medsArr.map(m=>`<span class="vchip">${m.nombre||m.medicamento||'—'} ${m.dosis?'— '+m.dosis:''}</span>`).join('')}</div>
+      </div>`:''}
+
+      ${estudiosArr.length?`<div class="vsec">
+        <div class="vseclbl">Estudios solicitados</div>
+        <div>${estudiosArr.map(e=>`<span class="vchip">${e.nombre||e} ${e.estado?'— '+e.estado:''}</span>`).join('')}</div>
+      </div>`:''}
+
+      ${notasArr.length?`<div class="vsec">
+        <div class="vseclbl">Notas de evolución</div>
+        ${notasArr.map(n=>`<div class="vnota">${n.texto||n}<div class="vnota-meta">${n.autor||'Médico'} · ${n.hora||''}</div></div>`).join('')}
+      </div>`:''}
+
+      ${v.justificacion?`<div class="vsec">
+        <div class="vseclbl">Análisis IA (triage inicial)</div>
+        <div class="vsecval" style="font-style:italic;color:var(--mute)">${v.justificacion}</div>
+      </div>`:''}
+
+      <button class="vedit" onclick="abrirModal('${v.key}')">✎ Editar esta visita</button>
+    </div>
+  </div>`;
+}
+
+window.toggleVisita = function(i){
+  document.getElementById('vb-'+i).classList.toggle('open');
+  document.getElementById('vt-'+i).classList.toggle('open');
+};
+
+/* ── Modal de edición ── */
+window.abrirModal = function(key){
+  const v=visitas.find(x=>x.key===key);
+  if(!v) return;
+  visitaEditando=key;
+  notasModalTmp = Array.isArray(v.notas) ? JSON.parse(JSON.stringify(v.notas)) : [];
+
+  document.getElementById('m-sub').textContent = `${v.nombre||''} · ${v.fechaAlta||v.fecha||''}`;
+  document.getElementById('m-motivo').value = (v.motivo||'').replace('[SEGUIMIENTO] ','');
+  document.getElementById('m-estado').value = v.estadoFinal||'';
+  document.getElementById('m-nota-nueva').value='';
+  renderNotasModal();
+
+  document.getElementById('modal-edit').classList.add('show');
+};
+
+function renderNotasModal(){
+  const cont=document.getElementById('m-notas-list');
+  if(notasModalTmp.length===0){
+    cont.innerHTML='<div style="font-size:11px;color:var(--mute);font-style:italic;">Sin notas registradas</div>';
+    return;
+  }
+  cont.innerHTML=notasModalTmp.map((n,i)=>`
+    <div class="m-nota-row">
+      <div class="m-nota-txt">${n.texto||n}<div style="font-size:9px;color:var(--mute);margin-top:3px;font-family:var(--mono)">${n.autor||'Médico'} · ${n.hora||''}</div></div>
+      <button class="m-nota-del" onclick="eliminarNotaModal(${i})">✕</button>
+    </div>`).join('');
+}
+
+window.eliminarNotaModal = function(i){
+  notasModalTmp.splice(i,1);
+  renderNotasModal();
+};
+
+window.agregarNotaModal = function(){
+  const txt=document.getElementById('m-nota-nueva').value.trim();
+  if(!txt) return;
+  notasModalTmp.push({texto:txt,autor:'Médico',hora:new Date().toLocaleTimeString('es-MX',{hour12:false})});
+  document.getElementById('m-nota-nueva').value='';
+  renderNotasModal();
+};
+
+window.cerrarModal = function(){
+  document.getElementById('modal-edit').classList.remove('show');
+  visitaEditando=null;
+};
+
+window.guardarEdicion = function(){
+  if(!visitaEditando) return;
+  const motivo=document.getElementById('m-motivo').value.trim();
+  const estadoFinal=document.getElementById('m-estado').value.trim();
+
+  update(ref(db,'historial/'+visitaEditando), {
+    motivo, estadoFinal, notas: notasModalTmp
+  }).then(()=>{
+    cerrarModal();
+    mostrarFlash('✓ Visita actualizada');
+  }).catch(e=>{
+    console.error(e);
+    alert('No se pudo guardar el cambio. Intenta de nuevo.');
+  });
+};
+
+function mostrarFlash(msg){
+  const f=document.getElementById('flash');
+  f.textContent=msg;
+  f.classList.add('show');
+  setTimeout(()=>f.classList.remove('show'),2200);
+}
+
+/* Cerrar modal al hacer click fuera */
+document.getElementById('modal-edit').addEventListener('click', e=>{
+  if(e.target.id==='modal-edit') cerrarModal();
+});
+
+/* ── Eliminar expediente completo ── */
+window.abrirModalEliminar = function(){
+  if(!selKey) return;
+  const g = pacientes.find(p=>p.clave===selKey);
+  if(!g) return;
+  document.getElementById('m-elim-sub').textContent = `${g.nombre||'Sin nombre'} · ${g.visitas.length} visita(s) se eliminarán`;
+  document.getElementById('m-elim-confirm').value='';
+  document.getElementById('modal-eliminar').classList.add('show');
+};
+
+window.cerrarModalEliminar = function(){
+  document.getElementById('modal-eliminar').classList.remove('show');
+};
+
+window.confirmarEliminacion = function(){
+  const texto = document.getElementById('m-elim-confirm').value.trim().toUpperCase();
+  if(texto !== 'ELIMINAR'){
+    alert('Debes escribir exactamente "ELIMINAR" para confirmar.');
+    return;
+  }
+  const g = pacientes.find(p=>p.clave===selKey);
+  if(!g) return;
+
+  const usuario = usuarioActual();
+  const ahora = Date.now();
+
+  // Registro de auditoría — guarda una copia completa de lo eliminado
+  const registroAuditoria = {
+    paciente: g.nombre||'Sin nombre',
+    edad: g.edad||null,
+    sexo: g.sexo||null,
+    fechanac: g.fechanac||null,
+    numVisitas: g.visitas.length,
+    eliminadoPor: usuario,
+    fecha: new Date(ahora).toLocaleDateString('es-MX'),
+    hora: new Date(ahora).toLocaleTimeString('es-MX',{hour12:false}),
+    timestamp: ahora,
+    visitasEliminadas: g.visitas
+  };
+
+  push(auditRef, registroAuditoria)
+    .then(()=>{
+      // Borra cada visita del historial
+      const promesas = g.visitas.map(v => remove(ref(db,'historial/'+v.key)));
+      return Promise.all(promesas);
+    })
+    .then(()=>{
+      cerrarModalEliminar();
+      selKey=null;
+      document.getElementById('pdet').innerHTML='<div class="det-empty"><div class="det-empty-i">📁</div>Selecciona un paciente<br>para ver su expediente<br>e historial completo</div>';
+      mostrarFlash('✓ Expediente eliminado — registrado en auditoría');
+    })
+    .catch(e=>{
+      console.error(e);
+      alert('No se pudo eliminar el expediente. Intenta de nuevo.');
+    });
+};
+
+document.getElementById('modal-eliminar').addEventListener('click', e=>{
+  if(e.target.id==='modal-eliminar') cerrarModalEliminar();
+});
+
+
+function tick(){
+  document.getElementById('clk').textContent=new Date().toLocaleTimeString('es-MX',{hour12:false});
+}
+tick(); setInterval(tick,1000);
+</script>
+</body>
+</html>
