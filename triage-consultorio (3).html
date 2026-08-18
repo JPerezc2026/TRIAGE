@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRIAGE — Consultorio</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --R:#E63946;--O:#F4A261;--Y:#E9C46A;--G:#2A9D8F;--B:#457B9D;--T:#0694A2;
+  --P:#6B46C1;
+  --bg:#0A0E1A;--panel:#111827;--panel2:#0D1520;--brd:#1E2D3D;
+  --txt:#E8F4FD;--mute:#6B7C93;--mute2:#4A5568;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+  --ssa-vino:#0694A2;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column;}
+
+/* HEADER */
+header{background:var(--panel);border-bottom:1px solid var(--brd);padding:11px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.logo{display:flex;align-items:center;gap:10px;}
+.cruz{width:32px;height:32px;background:var(--P);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.lt{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:3px;}
+.ls{font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:2px;}
+#clk{font-family:var(--mono);font-size:16px;color:var(--P);letter-spacing:2px;}
+.hbtn{background:transparent;border:1px solid var(--mute);color:var(--mute);font-family:var(--mono);font-size:10px;letter-spacing:1px;padding:6px 12px;border-radius:4px;cursor:pointer;transition:all .2s;}
+.hbtn:hover{border-color:var(--txt);color:var(--txt);}
+
+/* BUSCADOR */
+.buscador{background:var(--panel);border-bottom:1px solid var(--brd);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.buscar-input{background:var(--panel2);border:1px solid var(--brd);border-radius:8px;color:var(--txt);font-family:var(--sans);font-size:14px;padding:10px 14px;outline:none;transition:border-color .2s;flex:1;max-width:400px;}
+.buscar-input:focus{border-color:var(--P);}
+.buscar-input::placeholder{color:var(--mute2);}
+.buscar-btn{background:var(--P);border:none;color:#fff;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1px;padding:10px 18px;border-radius:8px;cursor:pointer;transition:opacity .2s;}
+.buscar-btn:hover{opacity:.8;}
+.cola-label{font-family:var(--mono);font-size:10px;color:var(--mute);letter-spacing:2px;margin-left:auto;}
+.cola-badge{background:var(--P);color:#fff;font-family:var(--mono);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;margin-left:8px;}
+
+/* LAYOUT */
+.main{display:grid;grid-template-columns:320px 1fr;flex:1;min-height:0;overflow:hidden;}
+
+/* COLA LATERAL */
+.sidebar{background:var(--panel);border-right:1px solid var(--brd);overflow-y:auto;display:flex;flex-direction:column;}
+.sb-hdr{padding:12px 16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.sb-tit{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:var(--mute);}
+.pac-item{padding:12px 14px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background .2s;display:flex;align-items:center;gap:10px;}
+.pac-item:hover{background:#151f30;}
+.pac-item.activo{background:#0d1828;border-left:3px solid var(--P);}
+.pi-ico{font-size:18px;flex-shrink:0;}
+.pi-info{flex:1;min-width:0;}
+.pi-nom{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pi-meta{font-family:var(--mono);font-size:9px;color:var(--mute);margin-top:2px;}
+.pi-prio{font-family:var(--mono);font-size:8px;font-weight:700;padding:2px 7px;border-radius:4px;flex-shrink:0;}
+.pp1{background:rgba(230,57,70,.15);color:var(--R);}
+.pp2{background:rgba(244,162,97,.15);color:var(--O);}
+.pp3{background:rgba(233,196,106,.15);color:var(--Y);}
+.pp4{background:rgba(42,157,143,.15);color:var(--G);}
+.pp5{background:rgba(6,148,162,.15);color:var(--T);}
+.bandera-pip{background:var(--R);color:#fff;font-family:var(--mono);font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;margin-top:3px;display:inline-block;}
+.btn-llamar{background:var(--P);border:none;color:#fff;font-family:var(--mono);font-size:9px;font-weight:700;padding:5px 10px;border-radius:5px;cursor:pointer;transition:opacity .2s;white-space:nowrap;flex-shrink:0;}
+.btn-llamar:hover{opacity:.8;}
+.empty-sb{padding:30px 16px;text-align:center;color:var(--mute);font-family:var(--mono);font-size:11px;opacity:.5;line-height:2;}
+
+/* CONTENIDO */
+.content{overflow-y:auto;background:var(--bg);}
+.content-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--mute);font-family:var(--mono);font-size:12px;text-align:center;gap:12px;opacity:.4;}
+
+/* CONSULTORIO */
+.consul{padding:20px 24px;display:flex;flex-direction:column;gap:14px;}
+
+/* HEADER PACIENTE */
+.pac-hdr{background:var(--panel);border:1px solid var(--brd);border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.ph-left{display:flex;align-items:center;gap:14px;}
+.ph-ico{font-size:28px;}
+.ph-nom{font-size:20px;font-weight:700;}
+.ph-meta{font-family:var(--mono);font-size:11px;color:var(--mute);margin-top:3px;}
+.ph-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+.ph-prio{font-family:var(--mono);font-size:12px;font-weight:700;padding:5px 14px;border-radius:6px;}
+.ph-hora{font-family:var(--mono);font-size:10px;color:var(--mute);}
+.btn-cerrar{background:var(--G);border:none;color:#fff;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:1px;padding:8px 16px;border-radius:6px;cursor:pointer;transition:opacity .2s;}
+.btn-cerrar:hover{opacity:.8;}
+
+/* BANDERAS */
+.banderas-activas{background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.ba-tit{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--R);font-weight:700;margin-right:4px;}
+.ba-chip{background:var(--R);color:#fff;font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;}
+.anticoag-alert{background:rgba(244,162,97,.12);border:1px solid rgba(244,162,97,.4);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.aa-tit{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--O);font-weight:700;margin-right:4px;}
+.aa-chip{background:var(--O);color:#000;font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;}
+
+/* GRID INFO */
+.info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.info-card{background:var(--panel);border:1px solid var(--brd);border-radius:10px;padding:14px 16px;}
+.ic-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--mute);margin-bottom:8px;text-transform:uppercase;}
+.ic-val{font-size:13px;color:var(--txt);line-height:1.6;}
+.ic-chip{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 9px;border-radius:4px;margin:2px;}
+.chip-sint{background:rgba(69,123,157,.15);color:var(--B);}
+.chip-grave{background:rgba(230,57,70,.15);color:var(--R);}
+.chip-med{background:rgba(42,157,143,.15);color:var(--G);}
+.chip-alergia{background:rgba(244,162,97,.15);color:var(--O);}
+.full-col{grid-column:1/-1;}
+
+/* SIGNOS VITALES (idéntico a observación) */
+.alertas-box{border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.alertas-box.hay-alertas{background:rgba(230,57,70,.12);border:1px solid rgba(230,57,70,.4);}
+.alertas-box.sin-alertas{background:rgba(42,157,143,.08);border:1px solid rgba(42,157,143,.2);}
+.alerta-chip{background:var(--R);color:#fff;font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;animation:pulse-al .8s ease-in-out infinite;}
+@keyframes pulse-al{0%,100%{opacity:1}50%{opacity:.55}}
+.ok-chip{font-family:var(--mono);font-size:10px;color:var(--G);}
+.vitales-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px;}
+.vc{background:var(--panel2);border:1px solid var(--brd);border-radius:7px;padding:8px 10px;position:relative;}
+.vc.alerta-vital{border-color:var(--R);background:rgba(230,57,70,.08);}
+.vc.alerta-vital .vc-val{color:var(--R);}
+.vc-lbl{font-family:var(--mono);font-size:8px;color:var(--mute);letter-spacing:1px;margin-bottom:3px;}
+.vc-val{font-size:16px;font-weight:700;color:var(--txt);}
+.vc-hora{font-family:var(--mono);font-size:8px;color:var(--mute2);margin-top:2px;}
+.vc-alerta-ico{position:absolute;top:5px;right:6px;font-size:12px;}
+.tendencia{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;margin-top:2px;}
+.tend-up{color:var(--R);}
+.tend-down{color:var(--B);}
+.tend-stable{color:var(--G);}
+.qform{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.qi{background:var(--panel2);border:1px solid var(--brd);border-radius:5px;color:var(--txt);font-family:var(--sans);font-size:12px;padding:6px 9px;outline:none;transition:border-color .2s;min-width:0;}
+.qi:focus{border-color:var(--T);}
+.qi::placeholder{color:var(--mute2);}
+.qbtn{background:var(--T);border:none;color:#000;font-family:var(--mono);font-size:9px;font-weight:700;padding:6px 11px;border-radius:5px;cursor:pointer;white-space:nowrap;transition:opacity .2s;}
+.qbtn:hover{opacity:.8;}
+.vit-cnt{font-family:var(--mono);font-size:9px;color:var(--mute2);}
+
+/* HISTORIAL */
+.historial-list{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;}
+.hist-item{background:var(--panel2);border:1px solid var(--brd);border-radius:7px;padding:10px 12px;display:flex;align-items:flex-start;gap:10px;}
+.hi-fecha{font-family:var(--mono);font-size:10px;color:var(--mute);flex-shrink:0;min-width:60px;}
+.hi-info{flex:1;}
+.hi-dx{font-size:12px;font-weight:600;margin-bottom:2px;}
+.hi-meta{font-family:var(--mono);font-size:9px;color:var(--mute);}
+.hi-prio{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;flex-shrink:0;}
+
+/* ALERTA PACIENTE FRECUENTE */
+.frecuente-alert{background:rgba(233,196,106,.1);border:1px solid rgba(233,196,106,.3);border-radius:10px;padding:12px 16px;}
+.fa-tit{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--Y);font-weight:700;margin-bottom:5px;}
+.fa-txt{font-size:12px;color:var(--txt);}
+.fa-razones{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px;}
+.fa-r{background:rgba(233,196,106,.15);color:var(--Y);font-family:var(--mono);font-size:9px;padding:3px 9px;border-radius:4px;}
+
+/* CIERRE DE CONSULTA */
+.cierre-box{background:var(--panel);border:1px solid var(--brd);border-radius:12px;overflow:hidden;}
+.cierre-hdr{padding:12px 16px;border-bottom:1px solid var(--brd);background:var(--panel2);}
+.cierre-tit{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--mute);font-weight:700;}
+.cierre-body{padding:16px;display:flex;flex-direction:column;gap:12px;}
+.ci-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.ci-field label{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--mute);display:block;margin-bottom:5px;}
+.ci-input{width:100%;background:var(--panel2);border:1px solid var(--brd);border-radius:6px;color:var(--txt);font-family:var(--sans);font-size:13px;padding:9px 12px;outline:none;transition:border-color .2s;}
+.ci-input:focus{border-color:var(--P);}
+.ci-input::placeholder{color:var(--mute2);}
+.ci-textarea{width:100%;background:var(--panel2);border:1px solid var(--brd);border-radius:6px;color:var(--txt);font-family:var(--sans);font-size:13px;padding:9px 12px;outline:none;resize:vertical;min-height:80px;transition:border-color .2s;}
+.ci-textarea:focus{border-color:var(--P);}
+.ci-textarea::placeholder{color:var(--mute2);}
+.tipo-consulta-grid{display:flex;gap:8px;flex-wrap:wrap;}
+.tc-btn{background:var(--panel2);border:1px solid var(--brd);color:var(--mute);font-family:var(--mono);font-size:10px;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all .2s;}
+.tc-btn:hover{border-color:var(--P);color:var(--P);}
+.tc-btn.sel{background:rgba(107,70,193,.15);border-color:var(--P);color:var(--P);font-weight:700;}
+.btn-guardar{background:var(--P);border:none;color:#fff;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:2px;padding:14px;border-radius:8px;cursor:pointer;transition:opacity .2s;width:100%;}
+.btn-guardar:hover{opacity:.8;}
+
+/* FOOTER */
+footer{background:var(--panel);border-top:1px solid var(--brd);padding:9px 24px;display:flex;gap:16px;align-items:center;flex-shrink:0;}
+.fi{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;}
+.fdot{width:7px;height:7px;border-radius:50%;}
+.live{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--P);display:flex;align-items:center;gap:6px;}
+.ldot{width:5px;height:5px;border-radius:50%;background:var(--P);animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* MODAL ÉXITO */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--G);color:#000;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:1px;padding:12px 20px;border-radius:8px;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;z-index:100;}
+.toast.show{opacity:1;transform:translateY(0);}
+</style>
+<script src="triage-auth.js"></script>
+<link rel="stylesheet" href="triage-ssa.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="cruz" style="background:var(--ssa-vino)!important;font-size:16px">🩺</div>
+    <div><div class="lt">CONSULTORIO</div><div class="ls">RESUMEN CLÍNICO DEL PACIENTE</div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div id="clk">--:--:--</div>
+    <button class="hbtn" onclick="window.open('triage-medico.html')">← MÉDICO</button>
+    <button class="hbtn" onclick="window.open('triage-observacion.html')">🛏 OBS.</button>
+    <button class="hbtn" onclick="window.open('triage-reportes.html')">📊 REP.</button>
+  </div>
+</header>
+
+<!-- BUSCADOR -->
+<div class="buscador">
+  <input class="buscar-input" id="buscar-inp" placeholder="Buscar por nombre o # folio..." oninput="buscarPaciente()">
+  <button class="buscar-btn" onclick="buscarPaciente()">Buscar</button>
+  <div class="cola-label">EN COLA:</div>
+  <div class="cola-badge" id="cola-badge">0</div>
+</div>
+
+<div class="main">
+  <!-- COLA SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-hdr">
+      <div class="sb-tit">PACIENTES EN ESPERA</div>
+    </div>
+    <div id="sb-lista"></div>
+  </div>
+
+  <!-- CONTENIDO CONSULTORIO -->
+  <div class="content" id="content">
+    <div class="content-empty">
+      <div style="font-size:40px">🩺</div>
+      Selecciona o llama a un paciente<br>para ver su resumen clínico
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="fi"><div class="fdot" style="background:var(--P)"></div><span id="f-espera">0</span> en espera</div>
+  <div class="fi"><div class="fdot" style="background:var(--R)"></div><span id="f-banderas">0</span> con banderas</div>
+  <div class="fi"><div class="fdot" style="background:var(--Y)"></div><span id="f-frecuentes">0</span> frecuentes</div>
+  <div class="live"><div class="ldot"></div>EN VIVO</div>
+</footer>
+
+<div class="toast" id="toast">✓ CONSULTA GUARDADA</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, push, remove, update, set }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCDTgiL6OvNFYh-PC4g57GTw04pclU-nfs",
+  authDomain: "triage-centro-de-salud.firebaseapp.com",
+  databaseURL: "https://triage-centro-de-salud-default-rtdb.firebaseio.com",
+  projectId: "triage-centro-de-salud",
+  storageBucket: "triage-centro-de-salud.firebasestorage.app",
+  messagingSenderId: "66063012451",
+  appId: "1:66063012451:web:8be493b361302fbd185e56"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+let cola={}, historial={}, selId=null, keysMap={}, tipoConsulta='subsecuente';
+const ICOS={1:'🚨',2:'⚠️',3:'🔶',4:'✅',5:'🔵'};
+const PCOLS={1:'var(--R)',2:'var(--O)',3:'var(--Y)',4:'var(--G)',5:'var(--T)'};
+const PNOMS={1:'P1 ROJO',2:'P2 NARANJA',3:'P3 AMARILLO',4:'P4 VERDE',5:'P5 AZUL'};
+
+/* ══════════════════════════════════
+   SIGNOS VITALES — alertas y tendencias
+   (misma lógica que triage-observacion.html)
+   ══════════════════════════════════ */
+function verificarAlertasVit(vits){
+  const alertas=[];
+  if(!vits||vits.length===0) return alertas;
+  const u=vits[vits.length-1];
+
+  const sato2=parseFloat(u.sato2);
+  if(!isNaN(sato2) && sato2<90) alertas.push(`⚠ SpO₂ BAJA: ${sato2}%`);
+
+  const fc=parseFloat(u.fc);
+  if(!isNaN(fc)){
+    if(fc>130) alertas.push(`⚠ TAQUICARDIA: FC ${fc} lpm`);
+    if(fc<40)  alertas.push(`⚠ BRADICARDIA: FC ${fc} lpm`);
+  }
+
+  if(u.presion){
+    const tas=parseFloat(u.presion.split('/')[0]);
+    if(!isNaN(tas) && tas<90) alertas.push(`⚠ HIPOTENSIÓN: TAS ${tas} mmHg`);
+  }
+
+  const temp=parseFloat(u.temp);
+  if(!isNaN(temp)){
+    if(temp>=39) alertas.push(`⚠ FIEBRE ALTA: ${temp}°C`);
+    if(temp<35)  alertas.push(`⚠ HIPOTERMIA: ${temp}°C`);
+  }
+
+  const gluc=parseFloat(u.glucosa);
+  if(!isNaN(gluc)){
+    if(gluc<70)  alertas.push(`⚠ HIPOGLUCEMIA: ${gluc} mg/dL`);
+    if(gluc>400) alertas.push(`⚠ HIPERGLUCEMIA: ${gluc} mg/dL`);
+  }
+
+  const fr=parseFloat(u.fr);
+  if(!isNaN(fr)){
+    if(fr>30) alertas.push(`⚠ TAQUIPNEA: FR ${fr} rpm`);
+    if(fr<8)  alertas.push(`⚠ BRADIPNEA: FR ${fr} rpm`);
+  }
+
+  return alertas;
+}
+
+function tendenciaC(vits,campo){
+  if(!vits||vits.length<2) return null;
+  const a=parseFloat(vits[vits.length-2][campo]);
+  const b=parseFloat(vits[vits.length-1][campo]);
+  if(isNaN(a)||isNaN(b)) return null;
+  const diff=b-a;
+  if(Math.abs(diff)<2) return 'stable';
+  return diff>0?'up':'down';
+}
+
+function iconoTendC(t){
+  if(!t) return '';
+  if(t==='up')   return `<span class="tendencia tend-up">↑</span>`;
+  if(t==='down') return `<span class="tendencia tend-down">↓</span>`;
+  return `<span class="tendencia tend-stable">→</span>`;
+}
+
+function esAlertaVit(campo,val){
+  if(campo==='sato2')   return parseFloat(val)<90;
+  if(campo==='fc')      return parseFloat(val)>130||parseFloat(val)<40;
+  if(campo==='temp')    return parseFloat(val)>=39||parseFloat(val)<35;
+  if(campo==='glucosa') return parseFloat(val)<70||parseFloat(val)>400;
+  if(campo==='presion') return parseFloat((val||'').split('/')[0])<90;
+  if(campo==='fr')      return parseFloat(val)>30||parseFloat(val)<8;
+  return false;
+}
+
+window.agregarVitalConsulta=id=>{
+  const v={
+    presion: document.getElementById('v-presion').value.trim(),
+    fc:      document.getElementById('v-fc').value.trim(),
+    sato2:   document.getElementById('v-sato2').value.trim(),
+    temp:    document.getElementById('v-temp').value.trim(),
+    fr:      document.getElementById('v-fr').value.trim(),
+    glucosa: document.getElementById('v-glucosa').value.trim(),
+    hora:    new Date().toLocaleTimeString('es-MX',{hour12:false}),
+    fechaHora: new Date().toLocaleString('es-MX')
+  };
+  if(!v.presion&&!v.fc&&!v.sato2&&!v.temp&&!v.fr&&!v.glucosa) return;
+
+  const pac=Object.values(cola).find(p=>p.id===id);
+  if(!pac) return;
+  const fbKey=Object.keys(keysMap).find(k=>keysMap[k].id===id);
+  if(!fbKey) return;
+
+  const arr=[...(pac.vitalesConsulta||[]),v];
+  update(ref(db,'pacientes/'+fbKey),{vitalesConsulta:arr})
+    .then(()=>renderConsultorio({...pac,vitalesConsulta:arr}))
+    .catch(e=>console.error(e));
+};
+
+window.guardarPesoTalla = id => {
+  const peso=parseFloat(document.getElementById('pc-peso').value);
+  const talla=parseFloat(document.getElementById('pc-talla').value);
+  if(!peso&&!talla){alert('Captura al menos el peso o la talla.');return;}
+
+  const pac=Object.values(cola).find(p=>p.id===id);
+  if(!pac) return;
+  const fbKey=Object.keys(keysMap).find(k=>keysMap[k].id===id);
+  if(!fbKey) return;
+
+  const datos={};
+  if(peso) datos.peso=peso;
+  if(talla) datos.talla=talla;
+
+  update(ref(db,'pacientes/'+fbKey),datos)
+    .then(()=>renderConsultorio({...pac,...datos}))
+    .catch(e=>console.error(e));
+};
+
+/* RELOJ */
+setInterval(()=>document.getElementById('clk').textContent=
+  new Date().toLocaleTimeString('es-MX',{hour12:false}),1000);
+
+/* FIREBASE */
+onValue(ref(db,'pacientes'),snap=>{
+  keysMap={};
+  const val=snap.val()||{};
+  Object.entries(val).forEach(([k,v])=>keysMap[k]=v);
+  cola=val;
+  renderSidebar();
+  actualizarFooter();
+  if(selId&&cola[Object.keys(keysMap).find(k=>keysMap[k].id===selId)]){
+    // refrescar ficha si el paciente sigue en cola
+  }
+});
+
+onValue(ref(db,'historial'),snap=>{
+  historial=snap.val()||{};
+});
+
+/* SIDEBAR */
+function renderSidebar(filtro=''){
+  const lista=document.getElementById('sb-lista');
+  let pacs=Object.values(cola).sort((a,b)=>a.prioridad-b.prioridad);
+  if(filtro) pacs=pacs.filter(p=>
+    p.nombre.toLowerCase().includes(filtro.toLowerCase())||
+    String(p.num).includes(filtro)
+  );
+  document.getElementById('cola-badge').textContent=Object.keys(cola).length;
+  if(pacs.length===0){
+    lista.innerHTML='<div class="empty-sb">Sin pacientes en cola</div>';return;
+  }
+  lista.innerHTML=pacs.map(p=>{
+    const tieneBanderas=(p.banderas||[]).length>0;
+    const esSeg=p.motivo&&p.motivo.startsWith('[SEGUIMIENTO]');
+    return `<div class="pac-item ${selId===p.id?'activo':''}" onclick="llamarPaciente(${p.id})">
+      <div class="pi-ico">${ICOS[p.prioridad]}</div>
+      <div class="pi-info">
+        <div class="pi-nom">${p.nombre}</div>
+        <div class="pi-meta">#${p.num} · ${p.edad||'?'}a · ${p.hora}${esSeg?' · [SEG]':''}</div>
+        ${tieneBanderas?`<div class="bandera-pip">🔴 ${(p.banderas||[]).length} bandera(s)</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <div class="pi-prio pp${p.prioridad}">${PNOMS[p.prioridad]}</div>
+        <button class="btn-llamar" onclick="event.stopPropagation();llamarPaciente(${p.id})">Llamar →</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function actualizarFooter(){
+  const pacs=Object.values(cola);
+  document.getElementById('f-espera').textContent=pacs.length;
+  document.getElementById('f-banderas').textContent=pacs.filter(p=>(p.banderas||[]).length>0).length;
+  // Paciente frecuente: más de 3 visitas en historial
+  const frecuentes=new Set();
+  Object.values(historial).forEach(h=>{
+    const nombre=h.nombre?.toLowerCase();
+    if(!nombre) return;
+    const count=Object.values(historial).filter(x=>x.nombre?.toLowerCase()===nombre).length;
+    if(count>=3) frecuentes.add(nombre);
+  });
+  document.getElementById('f-frecuentes').textContent=
+    pacs.filter(p=>frecuentes.has(p.nombre?.toLowerCase())).length;
+}
+
+window.buscarPaciente=()=>renderSidebar(document.getElementById('buscar-inp').value);
+
+/* ── SONIDO SUTIL DE LLAMADA ── */
+function tocarSonido(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const notas=[523,659,784]; // Do-Mi-Sol
+    notas.forEach((freq,i)=>{
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type='sine';
+      osc.frequency.setValueAtTime(freq,ctx.currentTime+i*0.18);
+      gain.gain.setValueAtTime(0,ctx.currentTime+i*0.18);
+      gain.gain.linearRampToValueAtTime(0.18,ctx.currentTime+i*0.18+0.05);
+      gain.gain.linearRampToValueAtTime(0,ctx.currentTime+i*0.18+0.25);
+      osc.start(ctx.currentTime+i*0.18);
+      osc.stop(ctx.currentTime+i*0.18+0.3);
+    });
+  } catch(e){ console.log('Audio no disponible'); }
+}
+
+/* LLAMAR PACIENTE */
+window.llamarPaciente=id=>{
+  selId=id;
+  const pac=Object.values(cola).find(p=>p.id===id);
+  if(!pac){alert('Paciente no encontrado.');return;}
+
+  // Tocar sonido local
+  tocarSonido();
+
+  // Escribir en Firebase con set ya importado — funciona entre computadoras
+  const llamadaRef=ref(db,'llamada_activa');
+  set(llamadaRef,{
+    nombre: pac.nombre,
+    num: pac.num,
+    destino: pac.destino||'Consultorio',
+    cama: pac.numeroCama||null,
+    prioridad: pac.prioridad,
+    timestamp: Date.now()
+  }).catch(e=>console.error('Error al escribir llamada:',e));
+
+  // Borrar automáticamente después de 12 segundos
+  setTimeout(()=>{
+    set(llamadaRef, null).catch(()=>{});
+  }, 12000);
+
+  renderSidebar(document.getElementById('buscar-inp').value);
+  renderConsultorio(pac);
+};
+
+function renderConsultorio(pac){
+  // Historial previo del mismo paciente
+  const histPac=Object.values(historial)
+    .filter(h=>h.nombre?.toLowerCase()===pac.nombre?.toLowerCase()&&h.diagnostico)
+    .sort((a,b)=>(b.timestampAlta||0)-(a.timestampAlta||0))
+    .slice(0,10);
+
+  // Medicamentos crónicos y alergias de consultas previas
+  const medsSet=new Set(), alergSet=new Set();
+  histPac.forEach(h=>{
+    (h.medicamentos||'').split(',').forEach(m=>{if(m.trim()) medsSet.add(m.trim());});
+    (h.alergias||'').split(',').forEach(a=>{if(a.trim()) alergSet.add(a.trim());});
+  });
+
+  // Detectar paciente frecuente (≥3 consultas en 30 días)
+  const hace30=Date.now()-30*24*60*60*1000;
+  const visitas30=Object.values(historial).filter(h=>
+    h.nombre?.toLowerCase()===pac.nombre?.toLowerCase()&&
+    (h.timestampAlta||0)>hace30
+  );
+  const esFrecuente=visitas30.length>=3;
+
+  const banderas=pac.banderas||[];
+  const sintomas=pac.sintomas||[pac.motivo||''];
+  const esSeg=pac.motivo?.startsWith('[SEGUIMIENTO]');
+  const mot=esSeg?pac.motivo.replace('[SEGUIMIENTO] ',''):pac.motivo;
+
+  // Signos vitales registrados durante esta consulta (misma lógica que observación)
+  const vitsConsulta=pac.vitalesConsulta||[];
+  const uvC=vitsConsulta.length>0?vitsConsulta[vitsConsulta.length-1]:null;
+  const alertasVit=verificarAlertasVit(vitsConsulta);
+  const tTAc=tendenciaC(vitsConsulta,'presion');
+  const tFCc=tendenciaC(vitsConsulta,'fc');
+  const tSatc=tendenciaC(vitsConsulta,'sato2');
+  const tTempc=tendenciaC(vitsConsulta,'temp');
+  const tFRc=tendenciaC(vitsConsulta,'fr');
+  const tGlucc=tendenciaC(vitsConsulta,'glucosa');
+
+  document.getElementById('content').innerHTML=`
+  <div class="consul">
+
+    <!-- HEADER PACIENTE -->
+    <div class="pac-hdr">
+      <div class="ph-left">
+        <div class="ph-ico">${ICOS[pac.prioridad]}</div>
+        <div>
+          <div class="ph-nom">${pac.nombre}</div>
+          <div class="ph-meta">#${pac.num} · ${pac.edad||'?'} años · ${pac.sexo||'—'} ${pac.fechanac?'· Nac: '+pac.fechanac:''} ${pac.telefono?'· 📞 '+pac.telefono:''}</div>
+          <div class="ph-meta" style="margin-top:2px">Llegó: ${pac.hora} · Dolor inicial: ${pac.dolor||0}/10 · Acomp: ${pac.acomp==='si'?'✅ Sí':'❌ No'}</div>
+        </div>
+      </div>
+      <div class="ph-right">
+        <div class="ph-prio pp${pac.prioridad}" style="background:${PCOLS[pac.prioridad]}22;color:${PCOLS[pac.prioridad]};border:1px solid ${PCOLS[pac.prioridad]}55">${PNOMS[pac.prioridad]}</div>
+        ${esSeg?'<div style="font-family:var(--mono);font-size:9px;color:var(--T);font-weight:700">📋 SEGUIMIENTO</div>':''}
+        <button class="btn-cerrar" style="background:#7B1B3A!important" onclick="abrirSiNBA(${pac.id})">📋 Vista SiNBA</button>
+        <button class="btn-cerrar" onclick="scrollCierre()">📝 Cerrar consulta ↓</button>
+      </div>
+    </div>
+
+    <!-- BANDERAS -->
+    ${banderas.length>0?`
+    <div class="banderas-activas">
+      <div class="ba-tit">🚨 BANDERAS DE ALARMA:</div>
+      ${banderas.map(b=>`<div class="ba-chip">${b.split(' ').slice(0,5).join(' ')}</div>`).join('')}
+    </div>`:''}
+
+    <!-- ANTICOAGULANTES / ANTIAGREGANTES -->
+    ${pac.anticoagulante?.usa?`
+    <div class="anticoag-alert">
+      <div class="aa-tit">⚠ RIESGO DE SANGRADO:</div>
+      <div class="aa-chip">Usa anticoagulante/antiagregante${pac.anticoagulante.medicamento?': '+pac.anticoagulante.medicamento:''}</div>
+    </div>`:''}
+
+    <!-- PACIENTE FRECUENTE -->
+    ${esFrecuente?`
+    <div class="frecuente-alert">
+      <div class="fa-tit">⚠ PACIENTE FRECUENTE</div>
+      <div class="fa-txt">${pac.nombre} tiene <strong>${visitas30.length} visitas en los últimos 30 días</strong>. Considerar:</div>
+      <div class="fa-razones">
+        <div class="fa-r">Enfermedad mal controlada</div>
+        <div class="fa-r">Problema social</div>
+        <div class="fa-r">Ansiedad</div>
+        <div class="fa-r">Necesidad de referencia</div>
+      </div>
+    </div>`:''}
+
+    <!-- INFO GRID -->
+    <div class="info-grid">
+
+      <!-- MOTIVO Y SÍNTOMAS -->
+      <div class="info-card">
+        <div class="ic-label">Motivo de consulta</div>
+        <div class="ic-val" style="margin-bottom:8px">${mot||'—'}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+          ${sintomas.map(s=>{
+            const esGrave=banderas.some(b=>b.toLowerCase().includes(s.split(' ')[0].toLowerCase()));
+            return `<span class="ic-chip ${esGrave?'chip-grave':'chip-sint'}">${s.split(' ').slice(0,4).join(' ')}${s.split(' ').length>4?'…':''}</span>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- PESO Y TALLA -->
+      <div class="info-card">
+        <div class="ic-label">Peso y talla</div>
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+          <div style="flex:1;min-width:80px;">
+            <label style="font-size:10px;color:var(--mute);display:block;margin-bottom:3px;">Peso (kg)</label>
+            <input class="qi" id="pc-peso" type="number" step="0.1" value="${pac.peso||''}" style="width:100%">
+          </div>
+          <div style="flex:1;min-width:80px;">
+            <label style="font-size:10px;color:var(--mute);display:block;margin-bottom:3px;">Talla (cm)</label>
+            <input class="qi" id="pc-talla" type="number" value="${pac.talla||''}" style="width:100%">
+          </div>
+          <button class="qbtn" onclick="guardarPesoTalla(${pac.id})">✓ Guardar</button>
+        </div>
+        ${pac.peso&&pac.talla?`<div style="font-size:11px;color:var(--mute);margin-top:8px;">IMC: <strong style="color:var(--txt)">${(pac.peso/((pac.talla/100)**2)).toFixed(1)}</strong></div>`:''}
+      </div>
+
+      <!-- PROCEDIMIENTO SOLICITADO (KIOSKO) -->
+      <div class="info-card">
+        <div class="ic-label">Procedimiento solicitado (kiosko)</div>
+        <div class="ic-val">${pac.procedimiento||'—'}</div>
+      </div>
+
+      <!-- SITUACIÓN CLÍNICA REPORTADA (KIOSKO) -->
+      <div class="info-card">
+        <div class="ic-label">Situación clínica reportada</div>
+        <div class="ic-val" style="margin-bottom:6px">${pac.situacion||'—'}</div>
+        ${pac.justificacion?`<div style="font-size:11px;color:var(--mute);line-height:1.5">${pac.justificacion}</div>`:''}
+      </div>
+
+      <!-- ENFERMEDADES CRÓNICAS (KIOSKO) -->
+      <div class="info-card">
+        <div class="ic-label">Enfermedades crónicas (kiosko)</div>
+        ${(pac.cronicas&&pac.cronicas.length>0&&pac.cronicas[0]!=='Ninguna')
+          ?pac.cronicas.map(c=>{
+            const med=(pac.medicamentosCronicos||{})[c];
+            return `<span class="ic-chip chip-med">${c}${med?': '+med:''}</span>`;
+          }).join('')
+          :'<div style="font-size:12px;color:var(--mute2);font-style:italic">Sin enfermedades crónicas reportadas</div>'}
+      </div>
+
+      <!-- MEDICAMENTOS CRÓNICOS -->
+      <div class="info-card">
+        <div class="ic-label">Medicamentos crónicos conocidos</div>
+        ${medsSet.size>0
+          ?[...medsSet].map(m=>`<span class="ic-chip chip-med">${m}</span>`).join('')
+          :'<div style="font-size:12px;color:var(--mute2);font-style:italic">Sin registro previo</div>'}
+      </div>
+
+      <!-- ALERGIAS -->
+      <div class="info-card">
+        <div class="ic-label">Alergias registradas</div>
+        ${alergSet.size>0
+          ?[...alergSet].map(a=>`<span class="ic-chip chip-alergia">${a}</span>`).join('')
+          :'<div style="font-size:12px;color:var(--mute2);font-style:italic">Sin alergias registradas</div>'}
+      </div>
+
+      <!-- ÚLTIMOS SIGNOS VITALES -->
+      ${(() => {
+        const ultVitales=Object.values(historial)
+          .filter(h=>h.nombre?.toLowerCase()===pac.nombre?.toLowerCase()&&h.vitales?.length>0)
+          .sort((a,b)=>(b.timestampAlta||0)-(a.timestampAlta||0))[0];
+        const uv=ultVitales?.vitales?.slice(-1)[0];
+        return uv?`
+        <div class="info-card">
+          <div class="ic-label">Últimos signos vitales <span style="color:var(--mute2)">(${ultVitales.horaAlta||ultVitales.fecha||'—'})</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;">
+            ${uv.presion?`<div><div style="font-family:var(--mono);font-size:8px;color:var(--mute)">PRESIÓN</div><div style="font-size:13px;font-weight:700">${uv.presion}</div></div>`:''}
+            ${uv.fc?`<div><div style="font-family:var(--mono);font-size:8px;color:var(--mute)">FC</div><div style="font-size:13px;font-weight:700">${uv.fc} lpm</div></div>`:''}
+            ${uv.sato2?`<div><div style="font-family:var(--mono);font-size:8px;color:var(--mute)">SpO₂</div><div style="font-size:13px;font-weight:700">${uv.sato2}%</div></div>`:''}
+            ${uv.temp?`<div><div style="font-family:var(--mono);font-size:8px;color:var(--mute)">TEMP</div><div style="font-size:13px;font-weight:700">${uv.temp}°C</div></div>`:''}
+          </div>
+        </div>`:'';
+      })()}
+
+      <!-- SIGNOS VITALES DE ESTA CONSULTA (con alarmas, igual que observación) -->
+      <div class="info-card full-col">
+        <div class="ic-label" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span>💓 Signos vitales de esta consulta</span>
+          <span class="vit-cnt">${vitsConsulta.length} registro(s)</span>
+        </div>
+
+        <div class="alertas-box ${alertasVit.length>0?'hay-alertas':'sin-alertas'}">
+          ${alertasVit.length>0
+            ? alertasVit.map(a=>`<div class="alerta-chip">${a}</div>`).join('')
+            : `<span class="ok-chip">✓ Sin alertas clínicas activas</span>`}
+        </div>
+
+        ${uvC ? `
+        <div class="vitales-grid">
+          <div class="vc ${esAlertaVit('presion',uvC.presion)?'alerta-vital':''}">
+            ${esAlertaVit('presion',uvC.presion)?'<div class="vc-alerta-ico">🔴</div>':''}
+            <div class="vc-lbl">PRESIÓN ART.</div>
+            <div class="vc-val">${uvC.presion||'—'}</div>
+            ${iconoTendC(tTAc,'presion')}
+            <div class="vc-hora">${uvC.hora||''}</div>
+          </div>
+          <div class="vc ${esAlertaVit('fc',uvC.fc)?'alerta-vital':''}">
+            ${esAlertaVit('fc',uvC.fc)?'<div class="vc-alerta-ico">🔴</div>':''}
+            <div class="vc-lbl">FREC. CARDÍACA</div>
+            <div class="vc-val">${uvC.fc||'—'} <span style="font-size:11px">lpm</span></div>
+            ${iconoTendC(tFCc,'fc')}
+            <div class="vc-hora">${uvC.hora||''}</div>
+          </div>
+          <div class="vc ${esAlertaVit('sato2',uvC.sato2)?'alerta-vital':''}">
+            ${esAlertaVit('sato2',uvC.sato2)?'<div class="vc-alerta-ico">🔴</div>':''}
+            <div class="vc-lbl">SAT. O₂</div>
+            <div class="vc-val">${uvC.sato2||'—'}<span style="font-size:11px">%</span></div>
+            ${iconoTendC(tSatc,'sato2')}
+            <div class="vc-hora">${uvC.hora||''}</div>
+          </div>
+          <div class="vc ${esAlertaVit('temp',uvC.temp)?'alerta-vital':''}">
+            ${esAlertaVit('temp',uvC.temp)?'<div class="vc-alerta-ico">🔴</div>':''}
+            <div class="vc-lbl">TEMPERATURA</div>
+            <div class="vc-val">${uvC.temp||'—'}<span style="font-size:11px">°C</span></div>
+            ${iconoTendC(tTempc,'temp')}
+            <div class="vc-hora">${uvC.hora||''}</div>
+          </div>
+          <div class="vc ${esAlertaVit('fr',uvC.fr)?'alerta-vital':''}">
+            ${esAlertaVit('fr',uvC.fr)?'<div class="vc-alerta-ico">🔴</div>':''}
+            <div class="vc-lbl">FREC. RESP.</div>
+            <div class="vc-val">${uvC.fr||'—'} <span style="font-size:11px">rpm</span></div>
+            ${iconoTendC(tFRc,'fr')}
+            <div class="vc-hora">${uvC.hora||''}</div>
+          </div>
+        </div>
+        ${uvC.glucosa!==undefined&&uvC.glucosa!==''?`
+        <div class="vitales-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="vc ${esAlertaVit('glucosa',uvC.glucosa)?'alerta-vital':''}">
+            ${esAlertaVit('glucosa',uvC.glucosa)?'<div class="vc-alerta-ico">🔴</div>':''}
+            <div class="vc-lbl">GLUCOSA</div>
+            <div class="vc-val">${uvC.glucosa} <span style="font-size:11px">mg/dL</span></div>
+            ${iconoTendC(tGlucc,'glucosa')}
+            <div class="vc-hora">${uvC.hora||''}</div>
+          </div>
+        </div>`:''}` : '<div style="font-size:12px;color:var(--mute2);font-style:italic;margin-bottom:6px">Sin registros de vitales en esta consulta</div>'}
+
+        <div class="qform" style="margin-top:8px">
+          <input class="qi" id="v-presion" placeholder="TA (120/80)" style="width:90px">
+          <input class="qi" id="v-fc" placeholder="FC" style="width:55px">
+          <input class="qi" id="v-sato2" placeholder="SpO₂%" style="width:60px">
+          <input class="qi" id="v-temp" placeholder="Temp°C" style="width:65px">
+          <input class="qi" id="v-fr" placeholder="FR rpm" style="width:60px">
+          <input class="qi" id="v-glucosa" placeholder="Glucosa" style="width:65px">
+          <button class="qbtn" onclick="agregarVitalConsulta(${pac.id})">+ Registrar</button>
+        </div>
+      </div>
+
+      <!-- HISTORIAL DE CONSULTAS -->
+      <div class="info-card full-col">
+        <div class="ic-label" style="margin-bottom:10px">Historial de consultas previas <span style="color:var(--mute2)">(${histPac.length} registros)</span></div>
+        ${histPac.length===0
+          ?'<div style="font-size:12px;color:var(--mute2);font-style:italic">Primera consulta en este sistema</div>'
+          :`<div class="historial-list">
+            ${histPac.map(h=>`
+            <div class="hist-item">
+              <div class="hi-fecha">${h.fechaAlta||h.fecha||'—'}<br><span style="color:var(--mute2)">${h.horaAlta||''}</span></div>
+              <div class="hi-info">
+                <div class="hi-dx">${h.diagnostico||h.motivo||'—'}</div>
+                <div class="hi-meta">
+                  ${h.tratamiento?'Trat: '+h.tratamiento.slice(0,60)+(h.tratamiento.length>60?'…':''):''}
+                  ${h.tipoConsulta?' · '+h.tipoConsulta:''}
+                </div>
+              </div>
+              <div class="hi-prio pp${h.prioridad||5}">${ICOS[h.prioridad||5]}</div>
+            </div>`).join('')}
+          </div>`}
+      </div>
+
+    </div>
+
+    <!-- CIERRE DE CONSULTA -->
+    <div class="cierre-box" id="cierre-box">
+      <div class="cierre-hdr">
+        <div class="cierre-tit">📝 CIERRE DE CONSULTA — SE GUARDA EN HISTORIAL</div>
+      </div>
+      <div class="cierre-body">
+
+        <div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:1px;margin-bottom:7px;">TIPO DE CONSULTA</div>
+          <div class="tipo-consulta-grid">
+            <button class="tc-btn" onclick="selTipo('primera')" id="tc-primera">Primera vez</button>
+            <button class="tc-btn sel" onclick="selTipo('subsecuente')" id="tc-subsecuente">Subsecuente</button>
+            <button class="tc-btn" onclick="selTipo('urgencia')" id="tc-urgencia">Urgencia</button>
+            <button class="tc-btn" onclick="selTipo('seguimiento')" id="tc-seguimiento">Seguimiento</button>
+            <button class="tc-btn" onclick="selTipo('referencia')" id="tc-referencia">Referencia</button>
+          </div>
+        </div>
+
+        <div class="ci-row">
+          <div class="ci-field">
+            <label>DIAGNÓSTICO PRINCIPAL</label>
+            <input class="ci-input" id="ci-dx" placeholder="Ej: IVRA, DM2, HTA, ITU...">
+          </div>
+          <div class="ci-field">
+            <label>CIE-10 (opcional)</label>
+            <input class="ci-input" id="ci-cie" placeholder="Ej: J00, E11, I10...">
+          </div>
+        </div>
+
+        <div class="ci-field">
+          <label>TRATAMIENTO / INDICACIONES</label>
+          <textarea class="ci-textarea" id="ci-trat" placeholder="Medicamentos indicados, dosis, duración..."></textarea>
+        </div>
+
+        <div class="ci-row">
+          <div class="ci-field">
+            <label>MEDICAMENTOS CRÓNICOS (actualizar)</label>
+            <input class="ci-input" id="ci-meds" placeholder="Ej: Metformina, Enalapril..." value="${[...medsSet].join(', ')}">
+          </div>
+          <div class="ci-field">
+            <label>ALERGIAS (actualizar)</label>
+            <input class="ci-input" id="ci-alergias" placeholder="Ej: Penicilina, AINES..." value="${[...alergSet].join(', ')}">
+          </div>
+        </div>
+
+        <div class="ci-field">
+          <label>NOTAS DE EVOLUCIÓN</label>
+          <textarea class="ci-textarea" id="ci-notas" placeholder="Observaciones, evolución clínica, plan..."></textarea>
+        </div>
+
+        <button class="btn-guardar" onclick="guardarConsulta(${pac.id})">✓ GUARDAR Y CERRAR CONSULTA</button>
+      </div>
+    </div>
+
+  </div>`;
+}
+
+window.abrirSiNBA = id => {
+  const pac = Object.values(cola).find(p=>p.id===id) ||
+              Object.values(historial).find(p=>p.id===id);
+  if(!pac) return;
+
+  const v = pac.vitalesIngreso || {};
+  const tas = v.presion ? v.presion.split('/') : ['',''];
+  const fecha = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'/');
+  const hora  = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false});
+  const edad  = parseInt(pac.edad)||0;
+  const imc   = (v.presion||pac.peso)&&pac.talla ? (pac.peso/((pac.talla/100)**2)).toFixed(1) : '—';
+
+  const w = window.open('','_blank','width=480,height=700');
+  w.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  <title>Vista SiNBA — ${pac.nombre}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:Arial,sans-serif;font-size:13px;color:#111;background:#fff;padding:16px;}
+    .hdr-ssa{display:flex;align-items:center;gap:12px;background:#7B1B3A;color:#fff;padding:10px 14px;border-radius:6px;margin-bottom:14px;}
+    .hdr-ssa .ico{font-size:24px;}
+    .hdr-ssa .tit{font-size:15px;font-weight:700;}
+    .hdr-ssa .sub{font-size:10px;opacity:.8;margin-top:2px;}
+    .aviso{background:#FFF9E6;border:1px solid #D4AC0D;border-radius:6px;padding:10px 12px;font-size:11px;color:#7D6608;margin-bottom:14px;line-height:1.6;}
+    .seccion{margin-bottom:16px;}
+    .sec-tit{background:#1B6B3A;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;padding:6px 10px;border-radius:4px;margin-bottom:8px;text-transform:uppercase;}
+    .campo{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:#f9f9f9;border:1px solid #e0e0e0;border-radius:5px;margin-bottom:5px;cursor:pointer;transition:background .15s;}
+    .campo:hover{background:#E8F5EE;}
+    .campo label{font-size:10px;color:#666;min-width:160px;flex-shrink:0;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding-top:2px;}
+    .campo .val{font-size:14px;font-weight:700;color:#111;flex:1;}
+    .campo .val.vacio{color:#bbb;font-weight:400;font-style:italic;}
+    .campo .copy-hint{font-size:9px;color:#1B6B3A;opacity:0;transition:opacity .15s;white-space:nowrap;}
+    .campo:hover .copy-hint{opacity:1;}
+    .campo.copiado{background:#E8F5EE;border-color:#1B6B3A;}
+    .btn-copy-all{width:100%;padding:12px;background:#7B1B3A;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;transition:opacity .2s;}
+    .btn-copy-all:hover{opacity:.85;}
+    .toast-copy{display:none;background:#1B6B3A;color:#fff;font-size:11px;font-weight:700;text-align:center;padding:8px;border-radius:5px;margin-top:8px;}
+    .toast-copy.show{display:block;}
+    .obligatorio{color:#C0392B;font-size:10px;margin-left:3px;}
+  </style>
+  </head><body>
+
+  <div class="hdr-ssa">
+    <div class="ico">⚕</div>
+    <div>
+      <div class="tit">Vista de Captura SiNBA</div>
+      <div class="sub">Toca cada campo para copiarlo · ${pac.nombre}</div>
+    </div>
+  </div>
+
+  <div class="aviso">
+    💡 <strong>Instrucciones:</strong> Toca cada campo para copiar el valor. Luego pégalo en SiNBA.
+    Los campos con <span style="color:#C0392B">*</span> son obligatorios en SiNBA.
+  </div>
+
+  <!-- DATOS GENERALES -->
+  <div class="seccion">
+    <div class="sec-tit">📅 Datos Generales</div>
+    ${campo('Fecha de consulta','fecha','date',fecha,true)}
+    ${campo('Hora de consulta','hora','time',hora,false)}
+    ${campo('Servicio','servicio','text','4 - CONSULTA EXTERNA GENERAL',true)}
+    ${campo('Relación temporal','relacion','text',pac.tipoConsulta==='primera'?'0 - PRIMERA VEZ':'1 - SUBSECUENTE',true)}
+  </div>
+
+  <!-- DATOS DEL PACIENTE -->
+  <div class="seccion">
+    <div class="sec-tit">👤 Paciente</div>
+    ${campo('Nombre','nombre','text',pac.nombre,true)}
+    ${campo('Fecha nacimiento','fechanac','date',pac.fechanac||'—',false)}
+    ${campo('Edad','edad','number',pac.edad||'—',false)}
+    ${campo('Sexo','sexo','text',pac.sexo||'—',false)}
+  </div>
+
+  <!-- SOMATOMETRÍA Y VITALES -->
+  <div class="seccion">
+    <div class="sec-tit">💓 Somatometría y Signos Vitales</div>
+    ${campo('Peso (kg)','peso','number',v.peso||pac.peso||'—',true)}
+    ${campo('Talla (cm)','talla','number',v.talla||pac.talla||'—',true)}
+    ${campo('IMC','imc','number',imc,false)}
+    ${campo('Circ. cintura (cm)','cintura','number',v.cintura||'—',false)}
+    ${campo('Presión sistólica','tas','number',tas[0]||'—',false)}
+    ${campo('Presión diastólica','tad','number',tas[1]||'—',false)}
+    ${campo('Frec. cardiaca','fc','number',v.fc||'—',false)}
+    ${campo('Frec. respiratoria','fr','number',v.fr||'—',false)}
+    ${campo('Temperatura','temp','number',v.temp||'—',false)}
+    ${campo('Saturación O₂','sato2','number',v.sato2||'—',false)}
+    ${campo('Glucemia','glucosa','number',v.glucosa||'—',false)}
+  </div>
+
+  <!-- DIAGNÓSTICOS -->
+  <div class="seccion">
+    <div class="sec-tit">🔬 Diagnósticos CIE-10</div>
+    ${campo('CIE-10 diagnóstico 1','cie1','text',pac.cie10||'—',true)}
+    ${campo('CIE-10 diagnóstico 2','cie2','text','—',false)}
+    ${campo('CIE-10 diagnóstico 3','cie3','text','—',false)}
+    ${campo('Motivo consulta (texto)','motivo','text',(pac.motivo||'').replace('[SEGUIMIENTO] ',''),false)}
+  </div>
+
+  <!-- MEDICAMENTOS -->
+  <div class="seccion">
+    <div class="sec-tit">💊 Prescripción</div>
+    ${campo('Medicamentos prescritos','meds','text',pac.tratamiento||'—',false)}
+    ${campo('Folio de receta','receta','text','—',false)}
+  </div>
+
+  <button class="btn-copy-all" onclick="copiarTodo()">📋 Copiar resumen completo</button>
+  <div class="toast-copy" id="toast-copy">✓ Copiado al portapapeles</div>
+
+  <script>
+  function campo_copy(el){
+    const val=el.querySelector('.val').textContent;
+    if(val==='—'||val==='') return;
+    navigator.clipboard.writeText(val).then(()=>{
+      el.classList.add('copiado');
+      setTimeout(()=>el.classList.remove('copiado'),1200);
+    });
+  }
+  document.querySelectorAll('.campo').forEach(el=>el.addEventListener('click',()=>campo_copy(el)));
+
+  function copiarTodo(){
+    const lines=[];
+    document.querySelectorAll('.campo').forEach(el=>{
+      const lbl=el.querySelector('label').textContent.replace('*','').trim();
+      const val=el.querySelector('.val').textContent;
+      if(val!=='—') lines.push(lbl+': '+val);
+    });
+    navigator.clipboard.writeText(lines.join('\\n')).then(()=>{
+      const t=document.getElementById('toast-copy');
+      t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'),2500);
+    });
+  }
+  <\/script>
+  </body></html>`);
+
+  function campo(label,id,type,val,obligatorio){
+    const vacio = !val||val==='—';
+    return `<div class="campo">
+      <label>${label}${obligatorio?'<span class="obligatorio">*</span>':''}</label>
+      <div class="val ${vacio?'vacio':''}">${val||'—'}</div>
+      <div class="copy-hint">📋 copiar</div>
+    </div>`;
+  }
+
+  w.document.close();
+};
+window.scrollCierre=()=>document.getElementById('cierre-box')?.scrollIntoView({behavior:'smooth'});
+
+window.selTipo=t=>{
+  tipoConsulta=t;
+  ['primera','subsecuente','urgencia','seguimiento','referencia'].forEach(id=>{
+    const btn=document.getElementById('tc-'+id);
+    if(btn) btn.className='tc-btn'+(id===t?' sel':'');
+  });
+};
+
+window.guardarConsulta=id=>{
+  const dx=document.getElementById('ci-dx').value.trim();
+  if(!dx){alert('Por favor ingresa el diagnóstico.');return;}
+
+  const pac=Object.values(cola).find(p=>p.id===id);
+  if(!pac) return;
+
+  const consulta={
+    ...pac,
+    diagnostico:dx,
+    cie10:document.getElementById('ci-cie').value.trim(),
+    tratamiento:document.getElementById('ci-trat').value.trim(),
+    medicamentos:document.getElementById('ci-meds').value.trim(),
+    alergias:document.getElementById('ci-alergias').value.trim(),
+    notasConsulta:document.getElementById('ci-notas').value.trim(),
+    tipoConsulta,
+    horaAlta:new Date().toLocaleTimeString('es-MX',{hour12:false}),
+    fechaAlta:new Date().toLocaleDateString('es-MX'),
+    timestamp:pac.timestamp,
+    timestampAlta:Date.now(),
+    estadoFinal:'Alta desde consultorio'
+  };
+
+  push(ref(db,'historial'),consulta)
+    .then(()=>{
+      const fbKey=Object.keys(keysMap).find(k=>keysMap[k].id===id);
+      if(fbKey) remove(ref(db,'pacientes/'+fbKey));
+      mostrarToast('✓ CONSULTA GUARDADA');
+      selId=null;
+      document.getElementById('content').innerHTML=
+        '<div class="content-empty"><div style="font-size:40px">🩺</div>Consulta guardada<br>Selecciona el siguiente paciente</div>';
+      // Preguntar seguimiento automático
+      setTimeout(()=>preguntarSeguimiento(consulta),400);
+    })
+    .catch(e=>console.error(e));
+};
+
+/* ══════════════════════════════════════
+   SEGUIMIENTO AUTOMÁTICO AL CERRAR
+   ══════════════════════════════════════ */
+const PLANTILLAS_SEG=[
+  {keywords:['hta','hipertensión','hipertension'],label:'HTA — Control mensual',dias:30},
+  {keywords:['dm2','diabetes','diabético','diabetico'],label:'DM2 — Control trimestral',dias:90},
+  {keywords:['embarazo','prenatal','gestación','gestacion','obstetr'],label:'Control prenatal',dias:28},
+  {keywords:['niño sano','nino sano','vigilancia','pediatr','crecimiento'],label:'Niño sano',dias:60},
+  {keywords:['tuberculosis','tb','dots'],label:'TB — DOTS semanal',dias:7},
+  {keywords:['desnutrición','desnutricion'],label:'Desnutrición — Control quincenal',dias:15},
+  {keywords:['ivra','resfriado','gripe','faringitis'],label:'Post-IVRA',dias:7},
+  {keywords:['itu','infección urinaria','infeccion urinaria'],label:'Post-ITU',dias:14},
+];
+
+function preguntarSeguimiento(consulta){
+  const dx=(consulta.diagnostico||'').toLowerCase();
+  // Buscar plantilla que coincida
+  let plantillaSug=null;
+  for(const p of PLANTILLAS_SEG){
+    if(p.keywords.some(k=>dx.includes(k))){ plantillaSug=p; break; }
+  }
+
+  // Crear modal de seguimiento
+  const modal=document.createElement('div');
+  modal.style.cssText=`
+    position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  `;
+
+  const fechaSug=plantillaSug?calcFecha(plantillaSug.dias):'';
+
+  modal.innerHTML=`
+    <div style="background:#111827;border:1px solid #1E2D3D;border-radius:16px;padding:28px;width:100%;max-width:440px;">
+      <div style="font-size:17px;font-weight:700;margin-bottom:5px;">📅 ¿Programar seguimiento?</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6B7C93;letter-spacing:2px;margin-bottom:16px;">PARA: ${consulta.nombre}</div>
+
+      ${plantillaSug?`
+      <div style="background:rgba(42,157,143,.1);border:1px solid rgba(42,157,143,.3);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#2A9D8F;letter-spacing:2px;margin-bottom:4px;">SUGERIDO POR DIAGNÓSTICO</div>
+        <div style="font-size:14px;font-weight:700;">${plantillaSug.label}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6B7C93;margin-top:3px;">Fecha sugerida: ${fechaSug}</div>
+      </div>`:''}
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#6B7C93;letter-spacing:1px;margin-bottom:5px;">DIAGNÓSTICO/MOTIVO</div>
+          <input id="seg-dx" style="width:100%;background:#0D1520;border:1px solid #1E2D3D;border-radius:7px;color:#E8F4FD;font-family:sans-serif;font-size:13px;padding:9px 12px;outline:none;" value="${consulta.diagnostico}" placeholder="Motivo del seguimiento">
+        </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#6B7C93;letter-spacing:1px;margin-bottom:5px;">FECHA DE PRÓXIMA CITA</div>
+          <input id="seg-fecha" type="date" style="width:100%;background:#0D1520;border:1px solid #1E2D3D;border-radius:7px;color:#E8F4FD;font-family:sans-serif;font-size:13px;padding:9px 12px;outline:none;" value="${fechaSug}">
+        </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#6B7C93;letter-spacing:1px;margin-bottom:5px;">PLANTILLAS RÁPIDAS</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${PLANTILLAS_SEG.slice(0,6).map(p=>`
+              <button onclick="document.getElementById('seg-dx').value='${p.label}';document.getElementById('seg-fecha').value='${calcFecha(p.dias)}'"
+                style="background:#0D1520;border:1px solid #1E2D3D;color:#6B7C93;font-family:'IBM Plex Mono',monospace;font-size:9px;padding:4px 10px;border-radius:4px;cursor:pointer;">
+                ${p.label.split('—')[0].trim()}
+              </button>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="this.closest('div[style]').remove()"
+          style="flex:1;padding:12px;border-radius:8px;border:1px solid #1E2D3D;background:transparent;color:#6B7C93;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;">
+          No por ahora
+        </button>
+        <button onclick="guardarSeguimientoRapido('${consulta.nombre}','${consulta.edad||''}a / ${consulta.sexo||'—'}')"
+          style="flex:2;padding:12px;border-radius:8px;border:none;background:#2A9D8F;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;letter-spacing:2px;cursor:pointer;">
+          ✓ PROGRAMAR SEGUIMIENTO
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{ if(e.target===modal) modal.remove(); });
+}
+
+function calcFecha(dias){
+  const f=new Date(); f.setDate(f.getDate()+dias);
+  return f.toISOString().split('T')[0];
+}
+
+window.guardarSeguimientoRapido=(nombre,edadSexo)=>{
+  const dx=document.getElementById('seg-dx')?.value.trim();
+  const fecha=document.getElementById('seg-fecha')?.value;
+  if(!dx||!fecha){alert('Completa el diagnóstico y la fecha.');return;}
+  push(ref(db,'seguimientos'),{
+    nombre,edadSexo,
+    diagnostico:dx,
+    fechaCita:fecha,
+    notas:'Programado al cierre de consulta',
+    fechaPrograma:new Date().toLocaleDateString('es-MX'),
+    timestamp:Date.now(),
+    completado:false,
+    reprogramaciones:0
+  }).then(()=>{
+    // Cerrar modal
+    document.querySelector('div[style*="position:fixed"][style*="z-index:300"]')?.remove();
+    mostrarToast('📅 SEGUIMIENTO PROGRAMADO');
+  });
+};
+
+function mostrarToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+</script>
+</body>
+</html>
